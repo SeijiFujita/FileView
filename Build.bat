@@ -11,7 +11,7 @@ dmd  -g  FileView01.d dlsbuffer.d @dwtlib_normal.txt
 @if ERRORLEVEL 1 goto :eof
 del *.obj
 
-FileView01
+FileView01 C:\D\rakugaki
 
 echo done...
 goto :eof

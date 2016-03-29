@@ -11,7 +11,7 @@
 // 
 import org.eclipse.swt.all;
 import org.eclipse.swt.internal.win32.OS;
-// import java.lang.all;
+import java.lang.all;
 
 //import std.conv;
 import std.file;
@@ -28,7 +28,7 @@ class MainForm
 	
 	string selectDirectoryPath;
 	
-	this() {
+	this(string arg) {
 		wm = new WindowManager("dwt base.");
 		
 		shell = wm.getShell();
@@ -36,7 +36,7 @@ class MainForm
 		
 		wm.setMenu();
 		
-		setDirectoryPath(getcwd());
+		setDirectoryPath(arg);
 		
 		createComponents();
 		
@@ -177,9 +177,9 @@ class MainForm
 		gridLayout.horizontalSpacing = gridLayout.verticalSpacing = 0;
 		composite.setLayout(gridLayout);
 
-		treeScopeLabel = new Label(composite, SWT.BORDER);
-		treeScopeLabel.setText("AllFolders");
-		treeScopeLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_FILL));
+//		treeScopeLabel = new Label(composite, SWT.BORDER);
+//		treeScopeLabel.setText("AllFolders");
+//		treeScopeLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_FILL));
 		
 		dirTree = new Tree(composite, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.SINGLE);
 		dirTree.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
@@ -341,6 +341,7 @@ version (none) {
 //		tableContentsOfLabel.setText("Files");
 //		tableContentsOfLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_FILL));
 
+		//fileTable = new Table(composite, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.FULL_SELECTION);
 		fileTable = new Table(composite, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI | SWT.FULL_SELECTION);
 		fileTable.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
 		
@@ -359,6 +360,7 @@ version (none) {
 		}
 		fileTable.setHeaderVisible(true);
 		
+/*
 		fileTable.addSelectionListener(new class SelectionAdapter {
 			override void widgetSelected(SelectionEvent event) {
 				// notifySelectedFiles(getSelectedFiles());
@@ -368,7 +370,6 @@ version (none) {
 				// doDefaultFileAction(getSelectedFiles());
 			}
 
-/*
 			private File[] getSelectedFiles() {
 				TableItem[] items = fileTable.getSelection();
 				File[] files = new File[items.length];
@@ -378,13 +379,13 @@ version (none) {
 				}
 				return files;
 			}
-*/
 		});
-
-//		createTableDragSource(fileTable);
-//		createTableDropTarget(fileTable);
+*/
+		
+		setDragDrop(fileTable);
 		
 		tableItemBackgroundColor = wm.getColor(230, 230, 230);
+		
 		
 		setFile(selectDirectoryPath);
 		setPopup(fileTable);
@@ -583,14 +584,81 @@ version (none) {
 		return success;
 	}
 
+	void setDragDrop(Table tt) {
+		int operations = DND.DROP_MOVE | DND.DROP_COPY | DND.DROP_LINK;
+		//
+		DragSource source = new DragSource(tt, operations);
+		source.setTransfer([FileTransfer.getInstance()]);
+		source.addDragListener(new class DragSourceListener {
+			override void dragStart(DragSourceEvent event) {
+				event.doit = (tt.getSelectionCount() != 0);
+			}
+			override void dragSetData(DragSourceEvent event) {
+				import std.outbuffer;
+				dlog("dragSetData");
+				dlog("event:", event);
+				auto items = cast(fileTableItem[]) tt.getSelection();
+				// StringBuffer buff = new StringBuffer();
+				string[] buff;
+				foreach (v ; items) {
+					buff ~= v.getfullPath();
+				}
+				event.data = new ArrayWrapperString2(buff);
+				// event.data = stringcast(paths);
+				// event.data = new StringArrayToObjectArray(paths);
+				//	event.data = new ArrayWrapperString(tt.getSelectionText());
+			}
+			override void dragFinished(DragSourceEvent event) {
+				if (event.detail == DND.DROP_MOVE) {
+					// del move files;
+				}
+				// table refresh
+			}
+		});
+		//
+		DropTarget target = new DropTarget(tt, operations);
+		target.setTransfer([FileTransfer.getInstance()]);
+		target.addDropListener(new class DropTargetAdapter {
+			override void dragEnter(DropTargetEvent event) {
+				// ドラッグ中のカーソルが入ってきた時の処理
+				// 修飾キーを押さない場合のドラッグ＆ドロップはコピー
+				if (event.detail == DND.DROP_DEFAULT)
+					event.detail = DND.DROP_COPY;
+			}
+			override void dragOperationChanged(DropTargetEvent event) {
+				// ドラッグ中に修飾キーが押されて処理が変更された時の処理
+				// 修飾キーを押さない場合のドラッグ＆ドロップはコピー
+				if (event.detail == DND.DROP_DEFAULT)
+					event.detail = DND.DROP_COPY;
+			}
+			override void drop(DropTargetEvent event) {
+				// event.data の内容を確認してカーソル位置にテキストをドロップ
+				if (event.data is null) {
+					event.detail = DND.DROP_NONE;
+					return;
+				} else if (FileTransfer.getInstance().isSupportedType(event.currentDataType)) {
+					string[] paths = stringArrayFromObject(event.data);
+					foreach(v ; paths) {
+						dlog("ddata: ", v);
+						//tt.insert(v ~ tt.getLineDelimiter());
+					}
+				}
+				// table refresh
+			}
+		});
+	}
 }
 //-----------------------------------------------------------------------------
 void main()
 {
-	try
-	{
+	try	{
 		dlog("# start");
-		auto main = new MainForm();
+		import core.runtime: Runtime;
+		string arg;
+		if (Runtime.args.length >= 2) {
+			arg = Runtime.args[1];
+		}
+		auto main = new MainForm(arg);
 	} catch(Exception e) {
 		dlog("Exception: ", e.toString());
 	}
