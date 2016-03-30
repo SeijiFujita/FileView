@@ -11,13 +11,14 @@
 // 
 import org.eclipse.swt.all;
 import org.eclipse.swt.internal.win32.OS;
+import org.eclipse.swt.internal.win32.WINAPI;
 import java.lang.all;
 
 //import std.conv;
 import std.file;
 import std.path;
 
-
+import utils;
 import dlsbuffer;
 
 
@@ -77,7 +78,7 @@ class MainForm
 	void updateFolder() {
 		setDirectoryPath(dirComboBox.getText());
 		setFolder(selectDirectoryPath);
-		setFile(selectDirectoryPath);
+		reloadFileTable(selectDirectoryPath);
 		dirComboBox.setText(selectDirectoryPath);
 	}
 	
@@ -190,7 +191,7 @@ class MainForm
 				auto item = cast(dirTreeItem)dirTree.getItem(point);
 				if (item !is null) {
 					dlog("MouseDown: ", item.getfullPath());
-					setFile(item.getfullPath());
+					reloadFileTable(item.getfullPath());
 				}
 			}
 		});
@@ -387,20 +388,28 @@ version (none) {
 		tableItemBackgroundColor = wm.getColor(230, 230, 230);
 		
 		
-		setFile(selectDirectoryPath);
+		reloadFileTable(selectDirectoryPath);
 		setPopup(fileTable);
 	}
 	
 	Color tableItemBackgroundColor;
 	uint tableItemcount;
 	bool show_directory;
+	string tablePath;
 	
-	void setFile(string path) { //, bool show_directory = false) {
+	void reloadFileTable() {
+		if (tablePath !is null) {
+			reloadFileTable(tablePath);
+		}
+	}
+	void reloadFileTable(string path) { //, bool show_directory = false) {
 		if (fileTable !is null) {
 			fileTable.removeAll();
 			tableItemcount = 0;
+			tablePath = path;
 			try {
 				if (show_directory) {
+					// addTable(fileTable, "..", "<dir>", fileDateString(e.name ~ "\\.."));
 					foreach (DirEntry e; dirEntries(path, SpanMode.shallow)) {
 						if (e.isDir()) {
 							addTable(fileTable, e.name, "<dir>", fileDateString(e.name));
@@ -510,18 +519,48 @@ version (none) {
 		addPopupMenu(menu, "Popup03", &dg_dummy);
 		addPopupMenu(menu, "Popup04", &dg_dummy);
 		addMenuSeparator(menu);
+		addPopupMenu(menu, "NewFile", &execNewFile);
+		auto itemCut   = addPopupMenu(menu, "Cut", &execCut);
+		auto itemCopy  = addPopupMenu(menu, "Copy", &execCopy);
+		auto itemPasete = addPopupMenu(menu, "Pasete", &execPasete);
+		addPopupMenu(menu, "toTrashBox", &execRecycleBin);
+		addPopupMenu(menu, "Rename", &execRename);
+		addMenuSeparator(menu);
+		addPopupMenu(menu, "Delete", &execDelete);
 		addPopupMenu(menu, "ReloadAll", &reloadAll);
-		addPopupMenu(menu, "ShowDirectory", &toggle_showDirectory, SWT.CHECK);
+		addPopupMenu(menu, "ShowDirectory", &toggle_showDirectory, 0, SWT.CHECK);
 		
+		menu.addMenuListener(new class MenuAdapter {
+			override void menuShown(MenuEvent e) {
+				// cut & copy menu
+				int count = fileTable.getSelectionCount();
+				itemCut.setEnabled(count > 0);
+				itemCopy.setEnabled(count > 0);
+				// is paste valid
+				TransferData[] available = wm.clipboard.getAvailableTypes();
+				bool enabled = false;
+				for (int i = 0; i < available.length; i++) {
+					if (FileTransfer.getInstance().isSupportedType(available[i])) {
+						enabled = true;
+						break;
+					}
+				}
+				itemPasete.setEnabled(enabled);
+			}
+		});
 	}
-	void addPopupMenu(Menu menu, string text, void delegate() dg, int style = SWT.NONE) {
+	MenuItem addPopupMenu(Menu menu, string text, void delegate() dg, int accelerator = 0, int style = SWT.NONE) {
 		MenuItem item = new MenuItem(menu, style);
 		item.setText(text);
+		if (accelerator != 0) {
+			item.setAccelerator(accelerator); // SWT.CTRL + 'A'
+		}
 		item.addSelectionListener(new class SelectionAdapter {
 			override void widgetSelected(SelectionEvent event) {
 				dg();
 			}
 		});
+		return item;
 	}
     void addMenuSeparator(Menu menu) {
 		new MenuItem(menu, SWT.SEPARATOR);
@@ -530,11 +569,11 @@ version (none) {
 	void dg_dummy() {
 	}
 	void reloadAll() {
-		updateFolder();
+		reloadFileTable();
 	}
 	void toggle_showDirectory() {
 		show_directory = show_directory ? false : true;
-		setFile(selectDirectoryPath);
+		reloadFileTable();
 	}
 	void extentionOpen() {
 		fileTableItem[] items = cast(fileTableItem[]) fileTable.getSelection();
@@ -564,10 +603,57 @@ version (none) {
 			CreateProcess(hidemaru ~ param);
 		}
 	}
+	void execDelete() {
+		if (fileTable.getSelectionCount() != 0) {
+			auto items = cast(fileTableItem[]) fileTable.getSelection();
+			foreach (v ; items) {
+				Remove(v.getfullPath());
+			}
+			reloadFileTable();
+		}
+	}
+	void execRecycleBin() {
+		if (fileTable.getSelectionCount() != 0) {
+			auto items = cast(fileTableItem[]) fileTable.getSelection();
+			StringBuffer buff = new StringBuffer();
+			foreach (v ; items) {
+				buff.append(v.getfullPath());
+				buff.append('\0');
+			}
+			StringT buffer = StrToTCHARs(0, buff.toString(), true);
+			
+			SHFILEOPSTRUCT op;
+			op.wFunc = FO_DELETE;
+			op.pFrom = buffer.ptr;
+			// op.fFlags = FOF_ALLOWUNDO;
+			op.fFlags = FOF_ALLOWUNDO + FOF_NOCONFIRMATION;
+			int stat = SHFileOperation(&op);
+			if (stat != 0) {
+				// https://msdn.microsoft.com/ja-jp/library/windows/desktop/bb762164%28v=vs.85%29.aspx
+				dlog("stat: ", stat);
+//				dlog("GetLastError: ", getLastErrorText());
+//				MessageBox.showError(getLastErrorText(), "GetLastError");
+			}
+			reloadFileTable();
+		}
+	}
+	void execCut() {
+	}
+	void execCopy() {
+	}
+	void execPasete() {
+	}
+	void execRename() {
+	}
+	void execNewFile() {
+		string newFile = tablePath ~ pathDelimiter ~ "newfile.txt";
+		std.file.write(tablePath, "// hello");
+		updateFolder();
+	}
 	bool CreateProcess(string commandLine) {
 		auto hHeap = OS.GetProcessHeap();
 		/* Use the character encoding for the default locale */
-		StringT buffer = StrToTCHARs (0, commandLine, true);
+		StringT buffer = StrToTCHARs(0, commandLine, true);
 		auto byteCount = buffer.length  * TCHAR.sizeof;
 		auto lpCommandLine = cast(TCHAR*)OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
 		OS.MoveMemory(lpCommandLine, buffer.ptr, byteCount);
@@ -585,34 +671,55 @@ version (none) {
 	}
 
 	void setDragDrop(Table tt) {
-		int operations = DND.DROP_MOVE | DND.DROP_COPY | DND.DROP_LINK;
+		// windows explorer の仕様
+		// drag + SHIFT : DND.DROP_MOVE
+		// drag + CTRL  : DND.DROP_COPY
+		// drag のみ    : DROP_DEFAULT application default(移動動作)
+		// drag + CTRL + SHIFT : DND.DROP_LINK;
+
+		int operations = DND.DROP_COPY;
+		// int operations = DND.DROP_MOVE | DND.DROP_COPY;
 		//
 		DragSource source = new DragSource(tt, operations);
 		source.setTransfer([FileTransfer.getInstance()]);
 		source.addDragListener(new class DragSourceListener {
+			// event.doit = true でドラックできる事をOLEに知らせる
 			override void dragStart(DragSourceEvent event) {
 				event.doit = (tt.getSelectionCount() != 0);
+				dlog("dragStart:event.detail: ", event.detail);
 			}
+			// ドラックするデータを作成し evet.data にセット
 			override void dragSetData(DragSourceEvent event) {
-				import std.outbuffer;
-				dlog("dragSetData");
-				dlog("event:", event);
+				dlog("dragSetData: event.detail: ", event.detail);
 				auto items = cast(fileTableItem[]) tt.getSelection();
-				// StringBuffer buff = new StringBuffer();
 				string[] buff;
 				foreach (v ; items) {
 					buff ~= v.getfullPath();
 				}
+				dlog("buff ", buff);
 				event.data = new ArrayWrapperString2(buff);
-				// event.data = stringcast(paths);
-				// event.data = new StringArrayToObjectArray(paths);
-				//	event.data = new ArrayWrapperString(tt.getSelectionText());
+				event.detail = DND.DROP_COPY;
 			}
+			// ドロップ後(貼り付け後)の終了処理
+			// 移動を行った後はソースを削除しないと移動にならない
 			override void dragFinished(DragSourceEvent event) {
+				dlog("dragFinished event: ", event);
+				dlog("event.detail: ", event.detail);
+				dlog("DND.DROP_COPY: ", DND.DROP_COPY);
+				dlog("DND.DROP_MOVE: ", DND.DROP_MOVE);
+				dlog("DND.DROP_DEFAULT: ", DND.DROP_DEFAULT);
+version (none) {
 				if (event.detail == DND.DROP_MOVE) {
-					// del move files;
+					dlog("delete");
+					// delete move files;
+					auto items = cast(fileTableItem[]) tt.getSelection();
+					foreach (v ; items) {
+						Remove(v.getfullPath());
+					}
+					updateFolder();
 				}
-				// table refresh
+} // version
+				dlog("dragFinished:end");
 			}
 		});
 		//
@@ -620,33 +727,40 @@ version (none) {
 		target.setTransfer([FileTransfer.getInstance()]);
 		target.addDropListener(new class DropTargetAdapter {
 			override void dragEnter(DropTargetEvent event) {
-				// ドラッグ中のカーソルが入ってきた時の処理
-				// 修飾キーを押さない場合のドラッグ＆ドロップはコピー
-				if (event.detail == DND.DROP_DEFAULT)
+				dlog("dragEnter");
+				dlog("DropTargetEvent event: ", event);
+				// ドラッグ中のマウスカーソルが入ってきた時にdragEnterは呼ばれます
+				// ドロップ可能な場合はevent.detail = DND.DROP_COPY に応答を行います
+				if (FileTransfer.getInstance().isSupportedType(event.currentDataType)) {
 					event.detail = DND.DROP_COPY;
+				} else {
+					event.detail = DND.DROP_NONE;
+				}
+				dlog("DropTargetEvent event: ", event);
 			}
 			override void dragOperationChanged(DropTargetEvent event) {
 				// ドラッグ中に修飾キーが押されて処理が変更された時の処理
 				// 修飾キーを押さない場合のドラッグ＆ドロップはコピー
-				if (event.detail == DND.DROP_DEFAULT)
-					event.detail = DND.DROP_COPY;
+				dlog("dragOperationChanged: event: ", event);
+				
 			}
 			override void drop(DropTargetEvent event) {
-				// event.data の内容を確認してカーソル位置にテキストをドロップ
-				if (event.data is null) {
-					event.detail = DND.DROP_NONE;
-					return;
-				} else if (FileTransfer.getInstance().isSupportedType(event.currentDataType)) {
-					string[] paths = stringArrayFromObject(event.data);
-					foreach(v ; paths) {
-						dlog("ddata: ", v);
-						//tt.insert(v ~ tt.getLineDelimiter());
+				// event.data の内容を確認してドロップに対応した処理を行う
+				dlog("drop: DropTargetEvent event: ", event);
+				if (FileTransfer.getInstance().isSupportedType(event.currentDataType)) {
+					string[] buff = stringArrayFromObject(event.data);
+					dlog("buff: ", buff);
+					dlog("tablePath: ", tablePath);
+					foreach(v ; buff) {
+						CopyFiletoDir(v, tablePath);
 					}
+					updateFolder();
 				}
-				// table refresh
+				dlog("drop: DropTargetEvent event: ", event);
 			}
 		});
 	}
+	
 }
 //-----------------------------------------------------------------------------
 void main()
@@ -669,17 +783,22 @@ class WindowManager
 private:
 	Display display;
 	Shell   shell;
+	Clipboard clipboard;
 	Label   statusLine;
+	
 
 	void init() {
 		if (display is null) {
 			display = new Display();
+			clipboard = new Clipboard(display);
 			display.systemFont = new Font(display, new FontData("Meiryo UI", 10f, SWT.NORMAL));
 			//display.systemFont = new Font(display, new FontData("Noto Sans Japanese", 11f, SWT.NORMAL));
 			// display.systemFont = new Font(display, new FontData("Consolas", 11f, SWT.NORMAL));
 			// display.systemFont = new Font(display, new FontData("Arial", 20, SWT.BOLD));
+			
 		}
 		shell = new Shell(display);
+
 	}
 
 public:
@@ -710,6 +829,7 @@ public:
 				display.sleep();
 			}
 		}
+		clipboard.dispose();
 		display.dispose();
 	}
 	
@@ -873,7 +993,7 @@ public:
 		// set current Font to FontDialog
 		fontDialog.setFontList(shell.getFont().getFontData());
 		FontData fontData = fontDialog.open();
-//		if (fontData !is null){
+//		if (fontData !is null) {
 //			if (shell.font !is null)
 //				shell.font.dispose();
 //			Font font = new Font(display, fontData);

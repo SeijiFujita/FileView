@@ -5,13 +5,14 @@ path=C:\D\dmd.2.070.0\windows\bin;C:\D\bin;
 @echo on
 
 rem dmd -wi -g  cmd_findFile.d dlsbuffer.d
-dmd  -g  FileView01.d dlsbuffer.d @dwtlib_normal.txt
+dmd  -g  FileView01.d utils.d dlsbuffer.d @dwtlib_normal.txt
 
 
 @if ERRORLEVEL 1 goto :eof
 del *.obj
 
-FileView01 C:\D\rakugaki
+rem FileView01 C:\D\rakugaki
+FileView01
 
 echo done...
 goto :eof
