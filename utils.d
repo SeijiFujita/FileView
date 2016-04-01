@@ -5,11 +5,17 @@
 //
 module utils;
 
+import org.eclipse.swt.internal.win32.OS;
+import org.eclipse.swt.internal.win32.WINAPI;
+import java.lang.all;
+
 import std.conv;
 import std.file;
 import std.path;
 
-//------------------------------------------------------------------------------
+import dlsbuffer;
+
+//@------------------------------------------------------------------------------
 // Utils
 
 version (Windows) {
@@ -42,6 +48,7 @@ void RmDir(string path) {
         std.file.rmdirRecurse(path);
     }
 }
+
 void CopyFiletoDir(string fromFile, string todir) {
 	if (fromFile.exists()) {
 		if (!todir.exists()) {
@@ -49,16 +56,47 @@ void CopyFiletoDir(string fromFile, string todir) {
 		}
 		if (todir.isDir()) {
 			string toFile = todir ~ pathDelimiter ~ baseName(fromFile);
-			Remove(toFile);
-			std.file.copy(fromFile, toFile);
+			if (fromFile != toFile) {
+				RecycleBin(toFile);
+				std.file.copy(fromFile, toFile);
+			}
 		}
 	}
 	else {
 		throw new Exception("CopyFiletoDir Error. See " ~ __FILE__ ~ to!string(__LINE__));
 	}
 }
+void RecycleBin(string file) {
+	string[] rb = [ file ];
+	RecycleBin(rb);
+}
 
-version (none) {
+void RecycleBin(string[] files) {
+	StringBuffer buff = new StringBuffer();
+	foreach (v ; files) {
+		buff.append(v);
+		buff.append('\0');
+	}
+	
+	StringT buffer = StrToTCHARs(0, buff.toString(), true);
+	
+	SHFILEOPSTRUCT op;
+	op.wFunc = FO_DELETE;
+	op.pFrom = buffer.ptr;
+	// op.fFlags = FOF_ALLOWUNDO;
+	op.fFlags = FOF_ALLOWUNDO + FOF_NOCONFIRMATION;
+	int stat = SHFileOperation(&op);
+	if (stat != 0) {
+		// https://msdn.microsoft.com/ja-jp/library/windows/desktop/bb762164%28v=vs.85%29.aspx
+		dlog("stat: ", stat);
+//		dlog("GetLastError: ", getLastErrorText());
+//		MessageBox.showError(getLastErrorText(), "GetLastError");
+	}
+}
+
+//@------------------------------------------------------------------------------
+//
+version(none) {
 bool CreateProcess(string commandLine) {
 	auto hHeap = OS.GetProcessHeap();
 	/* Use the character encoding for the default locale */
@@ -77,6 +115,33 @@ bool CreateProcess(string commandLine) {
 	if (lpProcessInformation.hThread !is null)
 		OS.CloseHandle (lpProcessInformation.hThread);
 	return success;
+}}
+
+//@------------------------------------------------------------------------------
+//
+//
+extern (Windows) nothrow @nogc {
+    HRESULT SHEmptyRecycleBinA(HWND, LPCSTR, DWORD);
+    HRESULT SHEmptyRecycleBinW(HWND, LPCWSTR, DWORD);
 }
+version = Unicode;
+version(Unicode) {
+    alias SHEmptyRecycleBinW SHEmptyRecycleBin;
+} else {
+    alias SHEmptyRecycleBinA SHEmptyRecycleBin;
 }
+
+bool EmptyRecycleBin() {
+	enum SHERB_NOCONFIRMATION = 1; //No dialog box confirming the deletion of the objects will be displayed./削除の確認ダイアログを表示しない
+	enum SHERB_NOPROGRESSUI   = 2; //No dialog box indicating the progress will be displayed./削除のプログレス（進行度）ダイアログを表示しない
+	enum SHERB_NOSOUND        = 4; //No sound will be played when the operation is complete./削除終了時サウンドを再生しない
+
+	return (
+		SHEmptyRecycleBin(null, null, 
+			SHERB_NOCONFIRMATION 
+			| SHERB_NOPROGRESSUI 
+			| SHERB_NOSOUND)
+		== 0);
+}
+
 
