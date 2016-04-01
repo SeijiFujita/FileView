@@ -202,7 +202,10 @@ version(none) {
 				auto item = cast(bookmarkItem)bookmarkTree.getItem(point);
 				if (item !is null) {
 					dlog("MouseDown: ", item.getfullPath());
-					reloadFileTable(item.getfullPath());
+					string path = item.getfullPath();
+					if (path.length && path.isDir()) {
+						reloadFileTable(path);
+					}
 				}
 			}
 		});
@@ -212,12 +215,15 @@ version(none) {
 				auto item = cast(bookmarkItem)bookmarkTree.getItem(point);
 				if (item !is null) {
 					dlog("MouseDoubleClick: ", item.getfullPath());
-					dirComboBox.setText(item.getfullPath());
-					updateFolder();
+					string path = item.getfullPath();
+					if (path.length && path.isDir()) {
+						dirComboBox.setText(item.getfullPath());
+						updateFolder();
+					}
 				}
 			}
 		});
-
+		
 	}
 	
 	string[] defaultBookmarks = [
@@ -231,6 +237,7 @@ version(none) {
 	
 	void bookmarkView() {
 		if (bookmarkTree !is null) {
+			bookmarkTree.removeAll();
 			auto itemTop = new bookmarkItem(bookmarkTree, SWT.NONE);
 			foreach (v ; defaultBookmarks) {
 				auto item = new bookmarkItem(itemTop, SWT.NONE);
@@ -249,7 +256,7 @@ version(none) {
 		this(Tree parent, int style) {
 			super(parent, style);
 			setText(bookmarkTopText);
-			fullPath = "\\";
+			fullPath = "";
 		}
 		this(Tree parent, string path, int style) {
 			super(parent, style);
@@ -492,7 +499,6 @@ version(none) {
 		
 		tableItemBackgroundColor = wm.getColor(230, 230, 230);
 		
-		
 		reloadFileTable(selectDirectoryPath);
 		setPopup(fileTable);
 	}
@@ -624,25 +630,32 @@ version(none) {
 		addPopupMenu(menu, "FileView", &execFileView);
 		addPopupMenu(menu, "FindFile", &execFileFile);
 		addMenuSeparator(menu);
-		addPopupMenu(menu, "NewFile", &execNewFile);
 		auto itemCut   = addPopupMenu(menu, "Cut", &execCut);
 		auto itemCopy  = addPopupMenu(menu, "Copy", &execCopy);
 		auto itemPasete = addPopupMenu(menu, "Pasete", &execPasete);
-		addPopupMenu(menu, "toTrashBox", &execRecycleBin);
+		addMenuSeparator(menu);
+		addPopupMenu(menu, "NewFile", &execNewFile);
+		addPopupMenu(menu, "Delete", &execRecycleBin);
 		addPopupMenu(menu, "Rename", &execRename);
 		addMenuSeparator(menu);
-		addPopupMenu(menu, "Delete", &execDelete);
+		addPopupMenu(menu, "Delete(do not recycle)", &execDelete);
 		addPopupMenu(menu, "ReloadAll", &reloadAll);
-		addPopupMenu(menu, "ShowDirectory", &toggle_showDirectory, 0, SWT.CHECK);
+		auto itemShowDirectory = addPopupMenu(menu, "ShowDirectory", &toggle_showDirectory, 0, SWT.CHECK);
 		
 		menu.addMenuListener(new class MenuAdapter {
 			override void menuShown(MenuEvent e) {
-				// cut & copy menu
+				// showDirectory
+				itemShowDirectory.setEnabled(show_directory);
+				
+				// cut & copy menu enable & disable
 				int count = fileTable.getSelectionCount();
 				itemCut.setEnabled(count > 0);
 				itemCopy.setEnabled(count > 0);
+				
 				// is paste valid
 				TransferData[] available = wm.clipboard.getAvailableTypes();
+				dlog("menuShown:available.length: ", available.length);
+				dlog("menuShown:available :", available);
 				bool enabled = false;
 				for (int i = 0; i < available.length; i++) {
 					if (FileTransfer.getInstance().isSupportedType(available[i])) {
@@ -766,12 +779,34 @@ version(none) {
 	}
 } // version
 	void execCut() {
+		// clipboard
+		//@
 	}
 	void execCopy() {
+		// clipboard copy
+		if (fileTable.getSelectionCount() != 0) {
+			auto items = cast(fileTableItem[]) fileTable.getSelection();
+			string[] buff;
+			foreach (v ; items) {
+				buff ~= v.getfullPath();
+			}
+			Object[] data = [new ArrayWrapperString2(buff) ];
+			Transfer[] types = [ FileTransfer.getInstance() ];
+			wm.clipboard.setContents(data, types);
+		}
 	}
 	void execPasete() {
+		string[] buff = stringArrayFromObject(wm.clipboard.getContents(FileTransfer.getInstance()));
+		dlog("execPasete:buff ", buff);
+		if (buff !is null && buff.length && checkCopy(buff[0], tablePath)) {
+			foreach(v ; buff) {
+				CopyFiletoDir(v, tablePath);
+			}
+			updateFolder();
+		}
 	}
 	void execRename() {
+		// @
 	}
 	void execNewFile() {
 		string newFile = tablePath ~ pathDelimiter ~ "newfile.txt";
@@ -797,7 +832,26 @@ version(none) {
 			OS.CloseHandle (lpProcessInformation.hThread);
 		return success;
 	}
-
+	
+	// 同じファイルにコピーしない
+	// use execPasete()
+	// use drop(DropTargetEvent event)
+	bool checkCopy(string from, string todir) {
+		string srcdir = dirName(from);
+		bool result;
+		if (srcdir == todir) {
+			result = false;
+		} else {
+			result = true;
+		}
+		dlog("checkCopy:srcdir: ", srcdir);
+		dlog("checkCopy:todir : ", todir);
+		dlog("checkCopy:result: ", result);
+		return result;
+	}
+	
+	// DND.DROP_COPY のみをサポート
+	// DND.DROP_MOVE は行わない
 	void setDragDrop(Table tt) {
 		// windows explorer の仕様
 		// drag only    : DROP_DEFAULT application default の動作は移動(DND.DROP_MOVE)
@@ -887,20 +941,6 @@ version (none) {
 					}
 				}
 				dlog("drop: DropTargetEvent event: ", event);
-			}
-			// ファイルコピーを同じファイルにコピーしない
-			bool checkCopy(string from, string todir) {
-				string srcdir = dirName(from);
-				bool result;
-				if (srcdir == todir) {
-					result = false;
-				} else {
-					result = true;
-				}
-				dlog("checkCopy:srcdir: ", srcdir);
-				dlog("checkCopy:todir : ", todir);
-				dlog("checkCopy:result: ", result);
-				return result;
 			}
 		});
 	}
