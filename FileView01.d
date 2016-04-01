@@ -113,6 +113,23 @@ class MainForm
 		GridData gridData = new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL);
 		gridData.horizontalSpan = 2;
 		sashForm.setLayoutData(gridData);
+		
+		SashForm leftForm = new SashForm(sashForm, SWT.NONE);
+		leftForm.setOrientation(SWT.VERTICAL);
+		createTreeView(leftForm);
+		bookmarkView(leftForm);
+		leftForm.setWeights([ 5, 2 ]);
+		
+		createTableView(sashForm);
+		sashForm.setWeights([ 2, 5 ]);
+
+version(none) {		
+		SashForm sashForm = new SashForm(shell, SWT.NONE);
+		sashForm.setOrientation(SWT.HORIZONTAL);
+		GridData gridData = new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL);
+		gridData.horizontalSpan = 2;
+		sashForm.setLayoutData(gridData);
+		
 		createTreeView(sashForm);
 		createTableView(sashForm);
 		sashForm.setWeights([ 2, 5 ]);
@@ -128,6 +145,7 @@ class MainForm
 //		gridData = new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_FILL);
 //		gridData.horizontalSpan = 2;
 //		diskSpaceLabel.setLayoutData(gridData);
+}
 	}
 	//----------------------
 	Combo dirComboBox;
@@ -167,10 +185,95 @@ class MainForm
 		);
 	*/
 	}
+
+//----------------------
+	enum  bookmarkTopText = "Bookmark";
+	Tree  bookmarkTree;
+	
+	void bookmarkView(Composite parent) {
+		bookmarkTree = new Tree(parent, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.SINGLE);
+		bookmarkTree.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
+		
+		bookmarkView();
+		
+		bookmarkTree.addListener(SWT.MouseDown, new class Listener {
+			void handleEvent(Event event) {
+				Point point = new Point(event.x, event.y);
+				auto item = cast(bookmarkItem)bookmarkTree.getItem(point);
+				if (item !is null) {
+					dlog("MouseDown: ", item.getfullPath());
+					reloadFileTable(item.getfullPath());
+				}
+			}
+		});
+		bookmarkTree.addListener(SWT.MouseDoubleClick, new class Listener {
+			void handleEvent(Event event) {
+				Point point = new Point(event.x, event.y);
+				auto item = cast(bookmarkItem)bookmarkTree.getItem(point);
+				if (item !is null) {
+					dlog("MouseDoubleClick: ", item.getfullPath());
+					dirComboBox.setText(item.getfullPath());
+					updateFolder();
+				}
+			}
+		});
+
+	}
+	
+	string[] defaultBookmarks = [
+		"C:\\Home",
+		"C:\\D",
+		"C:\\D\\rakugaki\\dwtdev",
+		"C:\\D\\rakugaki\\DlangUI",
+		"C:\\D\\rakugaki\\Gtkd",
+	];
+	
+	
+	void bookmarkView() {
+		if (bookmarkTree !is null) {
+			auto itemTop = new bookmarkItem(bookmarkTree, SWT.NONE);
+			foreach (v ; defaultBookmarks) {
+				auto item = new bookmarkItem(itemTop, SWT.NONE);
+				item.setPath(v);
+			}
+			itemTop.setExpanded(true);
+		}
+	}
+	class bookmarkItem : TreeItem
+	{
+		string fullPath;
+		
+		this(bookmarkItem parentItem, int style) {
+			super(parentItem, style);
+		}
+		this(Tree parent, int style) {
+			super(parent, style);
+			setText(bookmarkTopText);
+			fullPath = "\\";
+		}
+		this(Tree parent, string path, int style) {
+			super(parent, style);
+			setText(path);
+			fullPath = path;
+		}
+		string getfullPath() {
+			return fullPath;
+		}
+		void setPath(string path) {
+			fullPath = path;
+			setText(baseName(path));
+		}
+		bookmarkItem addChildPath(bookmarkItem node, string path) {
+			bookmarkItem item = new bookmarkItem(node, SWT.NULL);
+			item.setPath(path);
+			return item;
+		}
+	}
 //----------------------
 	Label treeScopeLabel;
 	Tree  dirTree;
 	void createTreeView(Composite parent) {
+version(none) {
 		Composite composite = new Composite(parent, SWT.NONE);
 		GridLayout gridLayout = new GridLayout();
 		gridLayout.numColumns = 1;
@@ -181,8 +284,9 @@ class MainForm
 //		treeScopeLabel = new Label(composite, SWT.BORDER);
 //		treeScopeLabel.setText("AllFolders");
 //		treeScopeLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_FILL));
-		
-		dirTree = new Tree(composite, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.SINGLE);
+}
+//		dirTree = new Tree(composite, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.SINGLE);
+		dirTree = new Tree(parent, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.SINGLE);
 		dirTree.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
 
 		dirTree.addListener(SWT.MouseDown, new class Listener {
@@ -332,6 +436,7 @@ version (none) {
 	Label tableContentsOfLabel;
 	Table fileTable;
 	void createTableView(Composite parent) {
+version(none) {
 		Composite composite = new Composite(parent, SWT.NONE);
 		GridLayout gridLayout = new GridLayout();
 		gridLayout.numColumns = 1;
@@ -341,9 +446,9 @@ version (none) {
 //		tableContentsOfLabel = new Label(composite, SWT.BORDER);
 //		tableContentsOfLabel.setText("Files");
 //		tableContentsOfLabel.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.VERTICAL_ALIGN_FILL));
-
+}
 		//fileTable = new Table(composite, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.FULL_SELECTION);
-		fileTable = new Table(composite, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI | SWT.FULL_SELECTION);
+		fileTable = new Table(parent, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI | SWT.FULL_SELECTION);
 		fileTable.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
 		
 		struct TableTitle { string name; int size; int alignment; }
@@ -516,8 +621,8 @@ version (none) {
 		
 		addPopupMenu(menu, "Hidemaru", &execHidemaru);
 		addPopupMenu(menu, "extentionOpen", &extentionOpen);
-		addPopupMenu(menu, "Popup03", &dg_dummy);
-		addPopupMenu(menu, "Popup04", &dg_dummy);
+		addPopupMenu(menu, "FileView", &execFileView);
+		addPopupMenu(menu, "FindFile", &execFileFile);
 		addMenuSeparator(menu);
 		addPopupMenu(menu, "NewFile", &execNewFile);
 		auto itemCut   = addPopupMenu(menu, "Cut", &execCut);
@@ -603,6 +708,16 @@ version (none) {
 			CreateProcess(hidemaru ~ param);
 		}
 	}
+	void execFileView() {
+		string prog = "C:\\D\bin\\fileView01.exe";
+		string param = " " ~ tablePath;
+		CreateProcess(prog ~ param);
+	}
+	void execFileFile() {
+		string prog = "C:\\D\bin\\fileView01.exe";
+		string param = " " ~ tablePath;
+		CreateProcess(prog ~ param);
+	}
 	void execDelete() {
 		if (fileTable.getSelectionCount() != 0) {
 			auto items = cast(fileTableItem[]) fileTable.getSelection();
@@ -612,6 +727,18 @@ version (none) {
 			reloadFileTable();
 		}
 	}
+	void execRecycleBin() {
+		if (fileTable.getSelectionCount() != 0) {
+			auto items = cast(fileTableItem[]) fileTable.getSelection();
+			string[] rb;
+			foreach (v ; items) {
+				rb ~= v.getfullPath();
+			}
+			RecycleBin(rb);
+			reloadFileTable();
+		}
+	}
+version(none) {	
 	void execRecycleBin() {
 		if (fileTable.getSelectionCount() != 0) {
 			auto items = cast(fileTableItem[]) fileTable.getSelection();
@@ -637,6 +764,7 @@ version (none) {
 			reloadFileTable();
 		}
 	}
+} // version
 	void execCut() {
 	}
 	void execCopy() {
@@ -672,11 +800,11 @@ version (none) {
 
 	void setDragDrop(Table tt) {
 		// windows explorer の仕様
+		// drag only    : DROP_DEFAULT application default の動作は移動(DND.DROP_MOVE)
 		// drag + SHIFT : DND.DROP_MOVE
 		// drag + CTRL  : DND.DROP_COPY
-		// drag のみ    : DROP_DEFAULT application default(移動動作)
 		// drag + CTRL + SHIFT : DND.DROP_LINK;
-
+		
 		int operations = DND.DROP_COPY;
 		// int operations = DND.DROP_MOVE | DND.DROP_COPY;
 		//
@@ -685,8 +813,8 @@ version (none) {
 		source.addDragListener(new class DragSourceListener {
 			// event.doit = true でドラックできる事をOLEに知らせる
 			override void dragStart(DragSourceEvent event) {
-				event.doit = (tt.getSelectionCount() != 0);
 				dlog("dragStart:event.detail: ", event.detail);
+				event.doit = (tt.getSelectionCount() != 0);
 			}
 			// ドラックするデータを作成し evet.data にセット
 			override void dragSetData(DragSourceEvent event) {
@@ -726,11 +854,11 @@ version (none) {
 		DropTarget target = new DropTarget(tt, operations);
 		target.setTransfer([FileTransfer.getInstance()]);
 		target.addDropListener(new class DropTargetAdapter {
+			// ドラッグ中のマウスカーソルが入ってきた時にdragEnterは呼ばれます
+			// ドロップ可能な場合はevent.detail = DND.DROP_COPY で応答を行います
 			override void dragEnter(DropTargetEvent event) {
 				dlog("dragEnter");
 				dlog("DropTargetEvent event: ", event);
-				// ドラッグ中のマウスカーソルが入ってきた時にdragEnterは呼ばれます
-				// ドロップ可能な場合はevent.detail = DND.DROP_COPY に応答を行います
 				if (FileTransfer.getInstance().isSupportedType(event.currentDataType)) {
 					event.detail = DND.DROP_COPY;
 				} else {
@@ -738,9 +866,9 @@ version (none) {
 				}
 				dlog("DropTargetEvent event: ", event);
 			}
+			// ドラッグ中に修飾キーが押されて処理が変更された時の処理
+			// 修飾キーを押さない場合のドラッグ＆ドロップはコピー
 			override void dragOperationChanged(DropTargetEvent event) {
-				// ドラッグ中に修飾キーが押されて処理が変更された時の処理
-				// 修飾キーを押さない場合のドラッグ＆ドロップはコピー
 				dlog("dragOperationChanged: event: ", event);
 				
 			}
@@ -751,12 +879,28 @@ version (none) {
 					string[] buff = stringArrayFromObject(event.data);
 					dlog("buff: ", buff);
 					dlog("tablePath: ", tablePath);
-					foreach(v ; buff) {
-						CopyFiletoDir(v, tablePath);
+					if (buff.length >= 1 && checkCopy(buff[0], tablePath)) {
+						foreach(v ; buff) {
+							CopyFiletoDir(v, tablePath);
+						}
+						updateFolder();
 					}
-					updateFolder();
 				}
 				dlog("drop: DropTargetEvent event: ", event);
+			}
+			// ファイルコピーを同じファイルにコピーしない
+			bool checkCopy(string from, string todir) {
+				string srcdir = dirName(from);
+				bool result;
+				if (srcdir == todir) {
+					result = false;
+				} else {
+					result = true;
+				}
+				dlog("checkCopy:srcdir: ", srcdir);
+				dlog("checkCopy:todir : ", todir);
+				dlog("checkCopy:result: ", result);
+				return result;
 			}
 		});
 	}
