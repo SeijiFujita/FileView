@@ -56,9 +56,17 @@ void CopyFiletoDir(string fromFile, string todir) {
 		}
 		if (todir.isDir()) {
 			string toFile = todir ~ pathDelimiter ~ baseName(fromFile);
+			dlog("CopyFiletoDir:fromFile: ", fromFile);
+			dlog("CopyFiletoDir:toFile  : ", toFile);
 			if (fromFile != toFile) {
-				RecycleBin(toFile);
+				if (toFile.exists()) {
+					RecycleBin(toFile);
+				}
 				std.file.copy(fromFile, toFile);
+				dlog("copy done..");
+			}
+			else {
+				dlog("do not copy...");
 			}
 		}
 	}
@@ -89,9 +97,28 @@ void RecycleBin(string[] files) {
 	if (stat != 0) {
 		// https://msdn.microsoft.com/ja-jp/library/windows/desktop/bb762164%28v=vs.85%29.aspx
 		dlog("stat: ", stat);
-//		dlog("GetLastError: ", getLastErrorText());
-//		MessageBox.showError(getLastErrorText(), "GetLastError");
+		string err = getLastErrorText();
+		dlog("GetLastError: ", err);
+//		MessageBox.showError(getLastErrorText(), "Error");
 	}
+}
+
+string getLastErrorText() {
+    int error = OS.GetLastError();
+    if (error is 0)
+    	return "";
+    TCHAR* buffer = null;
+    int dwFlags = OS.FORMAT_MESSAGE_ALLOCATE_BUFFER | OS.FORMAT_MESSAGE_FROM_SYSTEM | OS.FORMAT_MESSAGE_IGNORE_INSERTS;
+    int length = OS.FormatMessage(dwFlags, null, error, OS.LANG_USER_DEFAULT, cast(TCHAR*)&buffer, 0, null);
+    string errorNum = ("[GetLastError=") ~ .toHex(error) ~ "] ";
+    if (length == 0) {
+    	return errorNum;
+	}
+    string buffer1 = .TCHARzToStr(buffer, length);
+    if ( *buffer != 0) {
+        OS.LocalFree(cast(HLOCAL)buffer);
+    }
+    return errorNum ~ buffer1;
 }
 
 //@------------------------------------------------------------------------------
