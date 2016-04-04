@@ -722,12 +722,12 @@ version(none) {
 		}
 	}
 	void execFileView() {
-		string prog = "C:\\D\bin\\fileView01.exe";
+		string prog = "C:\\D\\bin\\fileView01.exe";
 		string param = " " ~ tablePath;
 		CreateProcess(prog ~ param);
 	}
 	void execFileFile() {
-		string prog = "C:\\D\bin\\fileView01.exe";
+		string prog = "C:\\D\\bin\\findFile.exe";
 		string param = " " ~ tablePath;
 		CreateProcess(prog ~ param);
 	}
