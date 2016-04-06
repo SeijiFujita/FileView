@@ -1,10 +1,13 @@
 #
--wi
+-wi -g
+main.d foldertree.d filetable.d bookmark.d utils.d dlsbuffer.d
+-ofFileView01.exe
+#
 -IC:\D\rakugaki\dwtdev\dwt_local\base\src
 -IC:\D\rakugaki\dwtdev\dwt_local\org.eclipse.swt.win32.win32.x86\src
 -JC:\D\rakugaki\dwtdev\dwt_local\res
 resource\resource.res
-# C:\D\rakugaki\dwtdev\dwt_local\win-res\resource.res
+#C:\D\rakugaki\dwtdev\dwt_local\win-res\resource.res
 #
 #-L/SUBSYSTEM:CONSOLE:4.0
 -L/SUBSYSTEM:WINDOWS:4.0

@@ -1,13 +1,4 @@
 //
-//
-
-import std.stdio;
-import std.conv;
-import std.json;
-import std.exception;
-
-version = USE_BACKUP;
-
 /*
  .hash table(連想配列)を使用してプログラムの内のデータの保存をする
  .ファイルの保存には JSON 形式を使用する
@@ -16,19 +7,25 @@ version = USE_BACKUP;
 
 */
 
+import std.stdio;
+import std.conv;
+import std.json;
+import std.exception;
+import std.file;
+import std.path;
+
+version = USE_BACKUP;
+
 immutable string productName     = "productName";
 immutable string productVersion  = "productVersion";
 immutable string buildDMD        = "buildDMD";
 
 enum CONFIG_EXT = ".conf";
 enum BACKUP_EXT = ".bakup";
-enum TEMP_EXT = ".temp";
+enum TEMP_EXT   = ".temp";
 
 class Config
 {
-import std.file;
-import std.path;
-
 private:
 	string[string] conf;
 	string _productPath;
@@ -83,15 +80,22 @@ public:
 		writeln("#----------------------");
 		saveConfig();
 	}
-	string setConfig(string key, string value) {
+	string set(string key, string value) {
 		conf[key] = value;
 		return value;
 	}
-	string getConfig(string key) {
+	string set(string key, int value) {
+		conf[key] = to!string(value);
+		return value;
+	}
+	string getString(string key) {
 		return conf[key];
 	}
 	int getInt(string key) {
 		return to!int(getConfig(key));
+	}
+	ulong getInt(string key) {
+		return to!ulong(getConfig(key));
 	}
 version (none) {
 	void printcrlf() {
@@ -128,7 +132,7 @@ version (none) {
 		if (exists(_configFilePath)) {
 			JSONValue jroot = parseJSON(cast(string)read(_configFilePath));
 			enforce(jroot.type == JSON_TYPE.OBJECT, "jroot.type == JSON_TYPE.OBJECT");
-			foreach (string key; conf.keys) {
+			foreach (key; conf.keys) {
 				setConfig(key, jroot[key].str());
 			}
 		}
@@ -136,21 +140,10 @@ version (none) {
 			saveConfig();
 		}
 	}
-	void exRemove(string f) {
-		if (exists(f)) {
-			remove(f);
-		}
-	}
-	void exRename(string from, string to) {
-		if (exists(from)) {
-			exRemove(to);
-			rename(from, to);
-		}
-	}
 	void saveConfig() {
 		// conf to json
 	    JSONValue jroot = ["@config" : "type-01"];	// dummy
-		foreach (string key; conf.keys) {
+		foreach (key; conf.keys) {
 		    jroot.object[key] = getConfig(key);
 		}
 		
@@ -167,6 +160,17 @@ pragma(msg, "USE_BACKUP");
 		exRename(_configTempPath, _configFilePath);
 }
 	}
+	void exRemove(string f) {
+		if (exists(f)) {
+			remove(f);
+		}
+	}
+	void exRename(string from, string to) {
+		if (exists(from)) {
+			exRemove(to);
+			rename(from, to);
+		}
+	}
 }
 
 
@@ -175,7 +179,9 @@ void main()
 {
 
 	Config conf = new Config;
-
+	conf.set("test_flag", 1);
+	conf.set("test_string", "stringValue");
+	conf.saveConfig();
 }
 
 version (none) {
