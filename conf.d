@@ -1,9 +1,7 @@
 //
 /*
- .hash table(連想配列)を使用してプログラムの内のデータの保存をする
- .ファイルの保存には JSON 形式を使用する
- .JSON には数値を扱う表現があるがシンプルに文字列のみを使用する
- .数値を扱うときはファイルから文字列をロードして改めて数値に変換する
+ .Associative Arrays(hashmap, hashtable, 連想配列)を使用してプログラムの内のデータの保存をする
+ .ファイルの保存には JSON 使用する
 
 */
 
@@ -14,10 +12,13 @@ import std.exception;
 import std.file;
 import std.path;
 
+import dlsbuffer;
+
 version = USE_BACKUP;
 
 immutable string productName     = "productName";
 immutable string productVersion  = "productVersion";
+immutable string buildDATE       = "buildDATE";
 immutable string buildDMD        = "buildDMD";
 
 enum CONFIG_EXT = ".conf";
@@ -27,7 +28,11 @@ enum TEMP_EXT   = ".temp";
 class Config
 {
 private:
-	string[string] conf;
+	string[string]		sValue;
+	long[string]		iValue;
+	string[][string]	sArray;
+	long[][string] 		iArray;
+	
 	string _productPath;
 	string _productName;
 	string _configFilePath;
@@ -35,17 +40,22 @@ private:
 	string _configBackPath;
 	
 	void init() {
-		setConfig(productName, "productName");
-		setConfig(productVersion, "ver 0.001a");
-		setConfig(buildDMD,  __VENDOR__ ~ " " ~ to!string(__VERSION__));
+		setString(productName, "FileView");
+		setString(productVersion, "ver 0.1a");
+		setString(buildDATE, __TIMESTAMP__);
+		setString(buildDMD,  __VENDOR__ ~ " " ~ to!string(__VERSION__));
 	}
 	
 	string getExecPath() {
 		import core.runtime: Runtime;
-		if (Runtime.args.length <= 0) {
+		string path = Runtime.args[0];
+		if (path.length <= 0) {
+			version (Windows) {
+				// GetModulePath(getModuleHandle());
+			}
 			assert(false, "Runtime.args.length = " ~ to!string(Runtime.args.length));
 		}
-		return Runtime.args[0].dup;
+		return path;
 	}
 	
 	void setupPath() {
@@ -63,40 +73,54 @@ private:
 		_configBackPath = _configFilePath ~ BACKUP_EXT;
     }
 	
-	void print() {
-		writeln("_configFilePath: ", _configFilePath);
-		writeln("_configBackPath: ", _configBackPath);
-		writeln("_configTempPath: ", _configTempPath);
-		writeln("_productPath:    ", _productPath);
-		writeln("_productName:    ", _productName);
-		writeln("conf: \n", conf);
+	void logPrint() {
+		dlog("_configFilePath: ", _configFilePath);
+		dlog("_configBackPath: ", _configBackPath);
+		dlog("_configTempPath: ", _configTempPath);
+		dlog("_productPath:    ", _productPath);
+		dlog("_productName:    ", _productName);
+		dlog("sValue: ", sValue);
+		dlog("iValue: ", iValue);
+		foreach(key; sArray.keys)
+			dlog("sArray: ", key, ":", sArray[key]);
+		foreach(key; iArray.keys)
+			dlog("iArray: ", key, ":", iArray[key]);
 	}
 
 public:
 	this() {
 		init();
 		setupPath();
-		print();
-		writeln("#----------------------");
-		saveConfig();
 	}
-	string set(string key, string value) {
-		conf[key] = value;
-		return value;
+	void setString(string key, string value) {
+		sValue[key] = value;
 	}
-	string set(string key, int value) {
-		conf[key] = to!string(value);
-		return value;
+	void setInt(string key, int value) {
+		iValue[key] = to!int(value);
 	}
+	void setLong(string key, long value) {
+		iValue[key] = value;
+	}
+	void setSArray(string key, string[] value) {
+		sArray[key] = value;
+	}
+	void setLArray(string key, long[] value) {
+		iArray[key] = value;
+	}
+	
 	string getString(string key) {
-		return conf[key];
+		return sValue[key];
 	}
-	int getInt(string key) {
-		return to!int(getConfig(key));
+	long getLong(string key) {
+		return iValue[key];
 	}
-	ulong getInt(string key) {
-		return to!ulong(getConfig(key));
+	string[] getSArray(string key) {
+		return sArray[key];
 	}
+	long[] getIArray(string key) {
+		return iArray[key];
+	}
+	
 version (none) {
 	void printcrlf() {
 		int n = to!int('\n');
@@ -106,7 +130,6 @@ version (none) {
 	}
 }
 	// https://ja.wikipedia.org/wiki/JavaScript_Object_Notation
-	// のエンコード項目によると
 	// JSONのテキストエンコーディングは基本UTF-8 らしい
 	//	enum CODE_CR = "\n"; // 10, 0x0A
 	//	enum CODE_LF = "\r"; // 13, 0x0D
@@ -114,8 +137,18 @@ version (none) {
 	//	enum CODE_TAB = "\t"; // HT, 0x09
 	string readerbleJson(string json) {
 		string result;
+		bool skip_flag;
 		foreach (v ; json) {
-			if (v == ',') {
+			if (skip_flag) {
+				if (v == ']') {
+					skip_flag = false;
+				}
+				result ~= v;
+				continue;
+			}
+			if (v == '[') {
+				skip_flag = true;
+			} else if (v == ',') {
 				result ~= ",\n\t";
 				continue;
 			} else if (v == '{') {
@@ -126,39 +159,77 @@ version (none) {
 			}
 			result ~= v;
 		}
-		return result.dup;
+		return result;
+		// return result.dup;
 	}
 	void loadConfig() {
-		if (exists(_configFilePath)) {
-			JSONValue jroot = parseJSON(cast(string)read(_configFilePath));
-			enforce(jroot.type == JSON_TYPE.OBJECT, "jroot.type == JSON_TYPE.OBJECT");
-			foreach (key; conf.keys) {
-				setConfig(key, jroot[key].str());
-			}
+		if (!exists(_configFilePath)) {
+			saveConfig();
 		}
 		else {
-			saveConfig();
+			JSONValue jroot = parseJSON( cast(string) std.file.read(_configFilePath));
+			enforce(jroot.type == JSON_TYPE.OBJECT, "jroot.type == JSON_TYPE.OBJECT");
+			foreach(key; jroot.object.keys) {
+				if (jroot[key].type == JSON_TYPE.STRING) {
+					setString(key, jroot[key].str);
+				} else if (jroot[key].type == JSON_TYPE.INTEGER) {
+					setLong(key, jroot[key].integer);
+				} else if (jroot[key].type == JSON_TYPE.ARRAY) {
+					if (jroot[key][0].type == JSON_TYPE.STRING) {
+						string[] str;
+						foreach(v; jroot[key].array) {
+							str ~= v.str();
+						}
+						setSArray(key, str);
+					} else if (jroot[key][0].type == JSON_TYPE.INTEGER) {
+						long[] l;
+						foreach(v; jroot[key].array) {
+							l ~= v.integer();
+						}
+						setLArray(key, l);
+					} else {
+						assert(false, "loadConfig: JSON Array errror" ~ __FILE__ ~ ":" ~ to!string(__LINE__));
+					}
+					//
+				}
+				else {
+					assert(false, "loadConfig: JSON Errror" ~ __FILE__ ~ ":" ~ to!string(__LINE__));
+					// (jroot[key].type == JSON_TYPE.UINTEGER)
+					// (jroot[key].type == JSON_TYPE.FLOAT)
+					// (jroot[key].type == JSON_TYPE.OBJECT)
+					// (jroot[key].type == JSON_TYPE.TRUE)
+					// (jroot[key].type == JSON_TYPE.FALSE)
+					// (jroot[key].type == JSON_TYPE.NULL)
+				}
+			}
 		}
 	}
 	void saveConfig() {
 		// conf to json
-	    JSONValue jroot = ["@config" : "type-01"];	// dummy
-		foreach (key; conf.keys) {
-		    jroot.object[key] = getConfig(key);
+	    JSONValue jroot = ["@config": "type01"];	// dummy
+		foreach (key; sValue.keys) {
+		    jroot[key] = getString(key);
 		}
-		
-//		string s = readerbleJson(jroot.toString());
-//		writeln(s);
+		foreach (key; iValue.keys) {
+			jroot[key] = getLong(key);
+		}
+		foreach (key; sArray.keys) {
+			jroot[key] = getSArray(key);
+		}
+		foreach (key; iArray.keys) {
+			jroot[key] = getIArray(key);
+		}
+		// writeln(readerbleJson(jroot.toString()));
 		
 		exRemove(_configTempPath);
-		write(_configTempPath, readerbleJson(jroot.toString()));
-version (USE_BACKUP) {
-pragma(msg, "USE_BACKUP");
-		exRename(_configFilePath, _configBackPath);
-		exRename(_configTempPath, _configFilePath);
-} else {
-		exRename(_configTempPath, _configFilePath);
-}
+		std.file.write(_configTempPath, readerbleJson(jroot.toString()));
+		
+		version (USE_BACKUP) {
+			exRename(_configFilePath, _configBackPath);
+			exRename(_configTempPath, _configFilePath);
+		} else {
+			exRename(_configTempPath, _configFilePath);
+		}
 	}
 	void exRemove(string f) {
 		if (exists(f)) {
@@ -174,6 +245,7 @@ pragma(msg, "USE_BACKUP");
 }
 
 
+version (none) {
 
 void main()
 {
@@ -184,7 +256,6 @@ void main()
 	conf.saveConfig();
 }
 
-version (none) {
 /++
 enum JSON_TYPE : byte {
     /// Indicates the type of a $(D JSONValue).

@@ -1,6 +1,6 @@
 #
 -wi -g
-main.d foldertree.d filetable.d bookmark.d utils.d dlsbuffer.d
+main.d foldertree.d filetable.d bookmark.d utils.d conf.d dlsbuffer.d
 -ofFileView01.exe
 #
 -IC:\D\rakugaki\dwtdev\dwt_local\base\src
