@@ -16,15 +16,16 @@ import std.path;
 
 import dlsbuffer;
 
-//@------------------------------------------------------------------------------
+// @@ -------------------------------------------------------------------------
 // Utils
 
+// std.ascii.newline
 version (Windows) {
 	enum isWindows = true;
-	enum pathDelimiter = "\\";
+	enum PathDelimiter = "\\";
 } else {
 	enum isWindows = false;
-	enum pathDelimiter = "/";
+	enum PathDelimiter = "/";
 }
 
 // file operation.
@@ -56,31 +57,140 @@ void CopyFiletoDir(string fromFile, string todir) {
 			MakeDir(todir);
 		}
 		if (todir.isDir()) {
-			string toFile = todir ~ pathDelimiter ~ baseName(fromFile);
+			string toFile = todir ~ PathDelimiter ~ baseName(fromFile);
 			dlog("CopyFiletoDir:fromFile: ", fromFile);
 			dlog("CopyFiletoDir:toFile  : ", toFile);
+			// don't copy same file
 			if (fromFile != toFile) {
 				if (toFile.exists()) {
 					RecycleBin(toFile);
 				}
-				std.file.copy(fromFile, toFile);
+				string[] fromFiles = [ fromFile ];
+				SHFileOperationCopy(fromFiles, toFile);
+				// std.file.copy(fromFile, toFile);
 				dlog("copy done..");
 			}
 			else {
 				dlog("do not copy...");
 			}
 		}
+		// isFile
+		
 	}
 	else {
 		throw new Exception("CopyFiletoDir Error. See " ~ __FILE__ ~ to!string(__LINE__));
 	}
 }
+// @@--------------------------------------------------------------------------
+//
+
+StringT stringArrayToStringT(string[] array) {
+	StringBuffer sb = new StringBuffer();
+	foreach (v ; array) {
+		sb.append(v);
+		sb.append('\0');
+	}
+	return StrToTCHARs(0, sb.toString(), true);
+}
+StringT stringToStringT(string st) {
+	StringBuffer sb = new StringBuffer();
+	sb.append(st);
+	sb.append('\0');
+	return StrToTCHARs(0, sb.toString(), true);
+}
+
+void SHFileOperationCopy(string[] fromFiles, string toPath) {
+	dlog("SHFileOperationCopy");
+	dlog("fromFiles:");
+	foreach(v; fromFiles) {
+		dlog(v);
+	}
+	dlog("toPath: ", toPath);
+	
+	StringT frombuffer = stringArrayToStringT(fromFiles);
+	StringT tobuffer = stringToStringT(toPath);
+	
+	SHFILEOPSTRUCT op;
+	op.wFunc = FO_COPY;
+	op.pFrom = frombuffer.ptr;
+	op.pTo   = tobuffer.ptr;
+	op.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION;
+	int stat = SHFileOperation(&op);
+	if (stat != 0) {
+		string err = getLastErrorText();
+		dlog("GetLastError: ", err);
+	}
+}
+
+void SHFileOperationMove(string[] fromFiles, string toPath) {
+	dlog("SHFileOperationMove");
+	dlog("fromFiles:");
+	foreach(v; fromFiles) {
+		dlog(v);
+	}
+	dlog("toPath: ", toPath);
+	
+	StringT frombuffer = stringArrayToStringT(fromFiles);
+	StringT tobuffer = stringToStringT(toPath);
+	
+	SHFILEOPSTRUCT op;
+	op.wFunc = FO_MOVE;
+	op.pFrom = frombuffer.ptr;
+	op.pTo   = tobuffer.ptr;
+	op.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION;
+	int stat = SHFileOperation(&op);
+	if (stat != 0) {
+		string err = getLastErrorText();
+		dlog("GetLastError: ", err);
+	}
+}
+
+void SHFileOperationRename(string fromFile, string toFile) {
+	dlog("SHFileOperationRename");
+	dlog("fromFile: ", fromFile);
+	dlog("toFile: ", toFile);
+	
+	StringT frombuffer = stringToStringT(fromFile);
+	StringT tobuffer = stringToStringT(toFile);
+
+	SHFILEOPSTRUCT op;
+	op.wFunc = FO_RENAME;
+	op.pFrom = frombuffer.ptr;
+	op.pTo   = tobuffer.ptr;
+	op.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION;
+	int stat = SHFileOperation(&op);
+	if (stat != 0) {
+		string err = getLastErrorText();
+		dlog("GetLastError: ", err);
+	}
+}
+
+
+void SHFileOperationDelete(string[] files) {
+	dlog("SHFileOperationDelete");
+	
+	StringT buffer = stringArrayToStringT(files);
+	
+	SHFILEOPSTRUCT op;
+	op.wFunc = FO_DELETE;
+	op.pFrom = buffer.ptr;
+	op.fFlags = FOF_ALLOWUNDO | FOF_NOCONFIRMATION;
+	int stat = SHFileOperation(&op);
+	if (stat != 0) {
+		// https://msdn.microsoft.com/ja-jp/library/windows/desktop/bb762164%28v=vs.85%29.aspx
+		dlog("GetLastError: ", getLastErrorText());
+//		MessageBox.showError(getLastErrorText(), "Error");
+	}
+}
+
+
 void RecycleBin(string file) {
 	string[] rb = [ file ];
 	RecycleBin(rb);
 }
 
 void RecycleBin(string[] files) {
+	dlog("RecycleBin");
 	StringBuffer buff = new StringBuffer();
 	foreach (v ; files) {
 		buff.append(v);
@@ -123,7 +233,7 @@ string getLastErrorText() {
 	return errorNum ~ buffer1;
 }
 
-//@------------------------------------------------------------------------------
+// @@--------------------------------------------------------------------------
 //
 version(none) {
 bool CreateProcess(string commandLine) {
@@ -146,18 +256,20 @@ bool CreateProcess(string commandLine) {
 	return success;
 }}
 
-//@------------------------------------------------------------------------------
+// @@--------------------------------------------------------------------------
 //
 //
 extern (Windows) nothrow @nogc {
+	
     HRESULT SHEmptyRecycleBinA(HWND, LPCSTR, DWORD);
     HRESULT SHEmptyRecycleBinW(HWND, LPCWSTR, DWORD);
+    
+	version = Unicode;
+	version(Unicode) {
+    	alias SHEmptyRecycleBinW SHEmptyRecycleBin;
+	} else {
+    	alias SHEmptyRecycleBinA SHEmptyRecycleBin;
 }
-version = Unicode;
-version(Unicode) {
-    alias SHEmptyRecycleBinW SHEmptyRecycleBin;
-} else {
-    alias SHEmptyRecycleBinA SHEmptyRecycleBin;
 }
 
 bool EmptyRecycleBin() {
@@ -173,14 +285,13 @@ bool EmptyRecycleBin() {
 		== 0);
 }
 
-//@------------------------------------------------------------------------------
+// @@--------------------------------------------------------------------------
 
 WindowManager wm;
 
 class WindowManager
 {
-public
-	Clipboard clipboard;
+public Clipboard clipboard;
 
 private:
 	Display display;

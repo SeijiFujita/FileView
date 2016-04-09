@@ -32,7 +32,7 @@ class Bookmark
 	];
 	
 	this() {
-		bookmarkConf = new Config;
+		
 	}
 	
 	void initUI(Composite parent) {
@@ -49,11 +49,13 @@ class Bookmark
 					dlog("MouseDown: ", item.getfullPath());
 					string path = item.getfullPath();
 					if (path.length && path.isDir()) {
-						reloadFileTable(path);
+						// reloadFileTable(path);
+						updateFolder(item.getfullPath());
 					}
 				}
 			}
 		});
+version (none) {
 		bookmarkTree.addListener(SWT.MouseDoubleClick, new class Listener {
 			void handleEvent(Event event) {
 				Point point = new Point(event.x, event.y);
@@ -67,7 +69,7 @@ class Bookmark
 				}
 			}
 		});
-		
+} // version
 	}
 	
 	void bookmarkView() {

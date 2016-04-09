@@ -13,6 +13,7 @@ import java.lang.all;
 
 import std.file;
 import std.path;
+import std.string;
 
 import utils;
 import dlsbuffer;
@@ -20,11 +21,16 @@ import dlsbuffer;
 
 class FileTable
 {
-	Table fileTable;
-	Color tableItemBackgroundColor;
-	uint tableItemcount;
+private:
 	bool show_directory;
+	bool show_advancedMenu;
+	int  enterRenameIndex;
 	string tablePath;
+	Color tableItemBackgroundColor;
+	Table fileTable;
+	uint tableItemcount;
+	
+public:
 	void delegate() updateFolder;
 
 	this() {
@@ -38,31 +44,50 @@ class FileTable
 		setPopup(fileTable);
 		reloadFileTable(path);
 		
-
 		fileTable.addListener(SWT.MouseDoubleClick, new class Listener {
 			void handleEvent(Event event) {
+				dlog("MouseDoubleClick");
+				int index = fileTable.getSelectionIndex();
+				int count = fileTable.getSelectionCount();
+				if (index >= 0 && count == 1) {
+					extentionOpen();
+				}
+			}
+		});
+		fileTable.addListener(SWT.MouseDown, new class Listener {
+			void handleEvent(Event event) {
 				dlog("MouseDown");
-				fileTableEditor();
+				// 同じファイル(テーブル)を二度クリックすることにより
+				// Renameモード(テーブルの編集)に入る
+				// index == 0 is first table
+				int index = fileTable.getSelectionIndex();
+				if (index < 0) {
+					enterRenameIndex = -1;
+				} else if (index != enterRenameIndex) {
+					enterRenameIndex = index;
+				} else {
+					fileTableEditor();
+					enterRenameIndex = -1;
+				}
 			}
 		});
 	}
+/*
 	bool checkFileRename(string fn) {
 		string ex = "\\/:*?\"<>|";
 		foreach (v ; ex) {
-			if (indexOf(fn, v)) {
+			if (std.string.indexOf(fn, v)) {
 				return false;
 			}
 		}
 		return true;
 	}
-	
-	//        SWT.KEYPAD_DIVIDE // '/'
-
+*/	
 	void fileTableEditor() {
 		enum EditCOLUMN = 0;
 		int count = fileTable.getSelectionCount();
 		int index = fileTable.getSelectionIndex();
-		auto item = fileTable.getItem(index);
+		auto item = cast(fileTableItem) fileTable.getItem(index);
 		dlog("count: ", count);
 		dlog("index: ", index);
 		if (count == 1 && index >= 0 && item !is null) {
@@ -71,10 +96,21 @@ class FileTable
 			//TableCursor cursor = new TableCursor(table, SWT.NONE);
 			//cursor.setVisible(false);
 			//cursor.setVisible(true);
-
+			
+			string beforeFuillPath = item.getfullPath();
+			string beforeEditData = item.getText(EditCOLUMN);
+			//
+			void doRename(string beforeFuillPath, string afeterEditData) {
+				if (baseName(beforeEditData) != afeterEditData) {
+					string fromfile = beforeFuillPath;
+					string tofile = dirName(beforeFuillPath) ~ "\\" ~ afeterEditData;
+					SHFileOperationRename(fromfile, tofile);
+				}
+			}
+			
 			// Text で編集を行う
 			Text newEditor = new Text(fileTable, SWT.NONE);
-			newEditor.setText(item.getText(EditCOLUMN));
+			newEditor.setText(beforeEditData);
 			newEditor.setFocus();
 			newEditor.selectAll();
 			tableEditor.setEditor(newEditor, item, EditCOLUMN);
@@ -93,9 +129,11 @@ class FileTable
 					dlog("e.character: ", e.character);
 					dlog("e.keyCode: ", e.keyCode);
 					if (e.character == SWT.CR) {
-						auto item = tableEditor.getItem();
-						item.setText(EditCOLUMN, newEditor.getText());
 						dlog("CR kye: ", newEditor.getText());
+						string afeterEditData = newEditor.getText();
+						auto item = tableEditor.getItem();
+						item.setText(EditCOLUMN, afeterEditData);
+						doRename(beforeFuillPath, afeterEditData);
 						newEditor.dispose();
 					} else if (e.character == SWT.ESC) {
 						dlog("ESC kye");
@@ -106,9 +144,11 @@ class FileTable
 			// フォーカスが外れたときの処理
 			newEditor.addFocusListener(new class FocusAdapter {
 				override void focusLost(FocusEvent e) {
-					auto item = tableEditor.getItem();
-					item.setText(EditCOLUMN, newEditor.getText());
 					dlog("focusLost: ", newEditor.getText());
+					string afeterEditData = newEditor.getText();
+					auto item = tableEditor.getItem();
+					item.setText(EditCOLUMN, afeterEditData);
+					doRename(beforeFuillPath, afeterEditData);
 					newEditor.dispose();
 				}
 			});
@@ -135,7 +175,6 @@ class FileTable
 		}
 		fileTable.setHeaderVisible(true);
 	}
-	
 	
 	void reloadFileTable() {
 		if (tablePath !is null) {
@@ -248,17 +287,23 @@ class FileTable
 		addPopupMenu(menu, "CMD", &execCmd);
 		addPopupMenu(menu, "extentionOpen", &extentionOpen);
 		addMenuSeparator(menu);
-		auto itemCut   = addPopupMenu(menu, "Cut", &execCut);
-		auto itemCopy  = addPopupMenu(menu, "Copy", &execCopy);
+		//--------------------
+		auto itemCut    = addPopupMenu(menu, "Cut", &execCut);
+		auto itemCopy   = addPopupMenu(menu, "Copy", &execCopy);
 		auto itemPasete = addPopupMenu(menu, "Pasete", &execPasete);
 		addMenuSeparator(menu);
+		//--------------------
 		addPopupMenu(menu, "NewFile", &execNewFile);
 		addPopupMenu(menu, "Delete", &execRecycleBin);
 		addPopupMenu(menu, "Rename", &execRename);
 		addMenuSeparator(menu);
-		addPopupMenu(menu, "Delete(do not recycle)", &execDelete);
 		addPopupMenu(menu, "ReloadAll", &reloadAll);
 		auto itemShowDirectory = addPopupMenu(menu, "ShowDirectory", &toggle_showDirectory, 0, SWT.CHECK);
+		addPopupMenu(menu, "Advanced Menu", &toggle_advanceMenu, 0, SWT.CHECK);
+		addMenuSeparator(menu);
+		//--------------------
+		auto itemDirectDelete = addPopupMenu(menu, "Delete(do not recycle)", &execDelete);
+		
 		
 		menu.addMenuListener(new class MenuAdapter {
 			override void menuShown(MenuEvent e) {
@@ -280,6 +325,9 @@ class FileTable
 					}
 				}
 				itemPasete.setEnabled(enabled);
+				
+				//advanced menu
+				itemDirectDelete.setEnabled(show_advancedMenu);
 			}
 		});
 	}
@@ -309,6 +357,9 @@ class FileTable
 		show_directory = show_directory ? false : true;
 		reloadFileTable();
 	}
+	void toggle_advanceMenu() {
+		show_advancedMenu = show_advancedMenu ? false : true;
+	}
 	void extentionOpen() {
 		fileTableItem[] items = cast(fileTableItem[]) fileTable.getSelection();
 		if (items.length == 1) {
@@ -316,13 +367,12 @@ class FileTable
 			string ext = extension(file);
 			if (ext !is null) {
 				dlog("extentonOpen");
-				dlog("-file: ", file);
-				dlog("-ext: ", ext);
 				auto p = Program.findProgram(ext);
 				dlog("-command: ", p.command);
 				p.execute(file);
 			}
 		}
+		reloadFileTable();
 	}
 	void execHidemaru() {
 		fileTableItem[] items = cast(fileTableItem[]) fileTable.getSelection();
@@ -335,6 +385,7 @@ class FileTable
 				dlog("v.getfullPath(): ", s);
 			}
 			CreateProcess(hidemaru ~ param);
+			reloadFileTable();
 		}
 	}
 	void execFileView() {
@@ -368,6 +419,7 @@ class FileTable
 			reloadFileTable();
 		}
 	}
+	// Delete
 	void execRecycleBin() {
 		if (fileTable.getSelectionCount() != 0) {
 			auto items = cast(fileTableItem[]) fileTable.getSelection();
@@ -379,33 +431,6 @@ class FileTable
 			reloadFileTable();
 		}
 	}
-version(none) {	
-	void execRecycleBin() {
-		if (fileTable.getSelectionCount() != 0) {
-			auto items = cast(fileTableItem[]) fileTable.getSelection();
-			StringBuffer buff = new StringBuffer();
-			foreach (v ; items) {
-				buff.append(v.getfullPath());
-				buff.append('\0');
-			}
-			StringT buffer = StrToTCHARs(0, buff.toString(), true);
-			
-			SHFILEOPSTRUCT op;
-			op.wFunc = FO_DELETE;
-			op.pFrom = buffer.ptr;
-			// op.fFlags = FOF_ALLOWUNDO;
-			op.fFlags = FOF_ALLOWUNDO + FOF_NOCONFIRMATION;
-			int stat = SHFileOperation(&op);
-			if (stat != 0) {
-				// https://msdn.microsoft.com/ja-jp/library/windows/desktop/bb762164%28v=vs.85%29.aspx
-				dlog("stat: ", stat);
-//				dlog("GetLastError: ", getLastErrorText());
-//				MessageBox.showError(getLastErrorText(), "GetLastError");
-			}
-			reloadFileTable();
-		}
-	}
-} // version
 	void execCut() {
 		// clipboard
 		//@
@@ -437,7 +462,7 @@ version(none) {
 		fileTableEditor();
 	}
 	void execNewFile() {
-		string newFile = tablePath ~ pathDelimiter ~ "newfile.txt";
+		string newFile = tablePath ~ PathDelimiter ~ "newfile.txt";
 		std.file.write(tablePath, "// hello");
 		reloadFileTable();
 	}

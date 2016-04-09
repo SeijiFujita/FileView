@@ -11,6 +11,7 @@ import java.lang.all;
 
 import std.file;
 import std.path;
+import std.string;
 
 import dlsbuffer;
 

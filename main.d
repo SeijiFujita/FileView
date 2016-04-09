@@ -3,6 +3,7 @@
  * dmd 2.070.0
  *
  */
+module main;
 
 import org.eclipse.swt.all;
 import java.lang.all;
@@ -14,6 +15,8 @@ import foldertree;
 import filetable;
 import bookmark;
 import utils;
+import conf;
+import setting;
 import dlsbuffer;
 
 class MainForm
@@ -29,24 +32,25 @@ class MainForm
 	// Image		LarrowIcon;
 	// Image		MenuIcon;
 	
-	this(string arg) {
+	
+	this() {
 		// utils.wm is grobal
 		wm = new WindowManager("FileView");
+		cf = new Config();
+		
 		shell = wm.getShell();
 		shellSetLayout();
+		shell.setImage(wm.loadIcon());
 		
 //		folderIcon = wm.image("folder.ico");
 //		LarrowIcon = wm.image("larrow24x24.png");
 //		MenuIcon   = wm.image("Menu32x32.png");
 		
-		shell.setImage(wm.loadIcon());
-		
-		
 		tfolder  = new FolderTree;
 		tfile    = new FileTable;
 		bookmark = new Bookmark;
 		
-		setDirectoryPath(arg);
+		setStartupPath();
 		createComponents();
 		
 		tfolder.updateFolder  = &setUpdateFolder;
@@ -56,8 +60,25 @@ class MainForm
 		tfile.updateFolder    = &updateFolder;
 		
 		wm.run();
+		cf.setString(LastPath, DirectoryPath);
+		cf.saveConfig();
 	}
 	
+	void setStartupPath() {
+		string arg = getCommandLine();
+		if (arg is null) {
+			cf.getString(LastPath, arg);
+		}
+		setDirectoryPath(arg);
+	}
+	string getCommandLine() {
+		import core.runtime: Runtime;
+		string arg = null;
+		if (Runtime.args.length >= 2) {
+			arg = Runtime.args[1];
+		}
+		return arg;
+	}
 	void setDirectoryPath(string d) {
 		if (d !is null && d.length && d.exists()) {
 			string path = buildNormalizedPath(d);
@@ -66,7 +87,9 @@ class MainForm
 			} else {
 				DirectoryPath = path;
 			}
-		} else {
+			//
+		}
+		else {
 			DirectoryPath = getcwd();
 		}
 		shell.setText("FileView -" ~ DirectoryPath);
@@ -156,14 +179,16 @@ class MainForm
 		Button menu = wm.createButton(container, "≡", SWT.PUSH, 35);
 		// menu.setImage(MenuIcon);
 		
-/*
-		void onSelection_enter(SelectionEvent e) {
-			updateFolder();
+		void onSelection_menu(SelectionEvent e) {
+			auto ddlg = new SettingDialog(shell);
+			string d = ddlg.open();
+//			if (d !is null) {
+//				dirBox.setText(d);
+//			}
 		}
-		updir.addSelectionListener(
-			dgSelectionListener(SelectionListener.SELECTION, &onSelection_enter)
+		menu.addSelectionListener(
+			dgSelectionListener(SelectionListener.SELECTION, &onSelection_menu)
 		);
-*/
 	}
 }
 //-----------------------------------------------------------------------------
@@ -171,12 +196,7 @@ void main()
 {
 	try	{
 		dlog("# start");
-		import core.runtime: Runtime;
-		string arg;
-		if (Runtime.args.length >= 2) {
-			arg = Runtime.args[1];
-		}
-		auto main = new MainForm(arg);
+		auto main = new MainForm();
 	}
 	catch(Exception e) {
 		dlog("Exception: ", e.toString());

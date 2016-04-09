@@ -1,6 +1,8 @@
 *.exe
 *.obj
 *.debug_log.txt
+*.conf
+FileView01.conf.bakup
 
 # Windows image file caches
 Thumbs.db

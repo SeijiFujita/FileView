@@ -20,10 +20,15 @@ immutable string productName     = "productName";
 immutable string productVersion  = "productVersion";
 immutable string buildDATE       = "buildDATE";
 immutable string buildDMD        = "buildDMD";
+//
+immutable string LastPath        = "LastPath";
+
 
 enum CONFIG_EXT = ".conf";
 enum BACKUP_EXT = ".bakup";
 enum TEMP_EXT   = ".temp";
+
+Config cf;
 
 class Config
 {
@@ -91,12 +96,13 @@ public:
 	this() {
 		init();
 		setupPath();
+		loadConfig();
 	}
 	void setString(string key, string value) {
 		sValue[key] = value;
 	}
 	void setInt(string key, int value) {
-		iValue[key] = to!int(value);
+		iValue[key] = to!long(value);
 	}
 	void setLong(string key, long value) {
 		iValue[key] = value;
@@ -104,20 +110,56 @@ public:
 	void setSArray(string key, string[] value) {
 		sArray[key] = value;
 	}
+	void setLArray(string key, int[] value) {
+		long[] array;
+		foreach(v; value) {
+			long i = v;
+			array ~= i;
+		}
+		iArray[key] = array;
+	}
 	void setLArray(string key, long[] value) {
 		iArray[key] = value;
 	}
-	
-	string getString(string key) {
+	//
+	private string getString(string key) {
 		return sValue[key];
 	}
-	long getLong(string key) {
+	bool chkStringKey(string key) {
+		return (key in sValue) ? true : false;
+	}
+	bool getString(string key, ref string value) {
+		bool result;
+		if (key in sValue) {
+			value  = sValue[key];
+			result = true;
+		} else {
+			value  = null;
+			result = false;
+		}
+		return result;
+	}
+	private long getLong(string key) {
 		return iValue[key];
 	}
-	string[] getSArray(string key) {
+	private string[] getSArray(string key) {
 		return sArray[key];
 	}
-	long[] getIArray(string key) {
+	bool chkSArrayKey(string key) {
+		return (key in sArray) ? true : false;
+	}
+	bool getSArray(string key, ref string[] value) {
+		bool result;
+		if (key in sArray) {
+			value = sArray[key];
+			result = true;
+		} else {
+			value = null;
+			result = false;
+		}
+		return result;
+	}
+	private long[] getIArray(string key) {
 		return iArray[key];
 	}
 	
