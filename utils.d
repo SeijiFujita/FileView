@@ -256,6 +256,45 @@ bool CreateProcess(string commandLine) {
 	return success;
 }}
 
+void SetTreeViewStyle(HANDLE handle) {
+	// add TVS_HASLINES;
+    int lStyle = OS.GetWindowLong(handle, OS.GWL_STYLE);
+    if ((lStyle & OS.TVS_HASLINES) == 0) {
+        lStyle |= OS.TVS_HASLINES;
+        OS.SetWindowLong(handle, OS.GWL_STYLE, lStyle);
+    }
+	// TreeView_GetExtendedStyle(handle)
+	// delete TVS_EX_AUTOHSCROLL
+	int exStyle = OS.SendMessage(handle, OS.TVM_GETEXTENDEDSTYLE, 0, 0);
+    if (exStyle & OS.TVS_EX_AUTOHSCROLL) {
+    	exStyle &= ~OS.TVS_EX_AUTOHSCROLL;
+	    OS.SendMessage(handle, OS.TVM_SETEXTENDEDSTYLE, 0, exStyle);
+    }
+	// delete TVS_EX_FADEINOUTEXPANDOS
+	if (exStyle & OS.TVS_EX_FADEINOUTEXPANDOS) {
+		exStyle &= ~OS.TVS_EX_FADEINOUTEXPANDOS;
+	    OS.SendMessage(handle, OS.TVM_SETEXTENDEDSTYLE, 0, exStyle);
+    }
+}
+
+/* 
+void SetTreeViewStyle(HWND hWnd) 
+{
+    LONG lStyle = ::GetWindowLong( hWnd, GWL_STYLE );
+    if ( ( lStyle & TVS_HASLINES ) == 0 )
+    {
+        lStyle |= TVS_HASLINES;
+        ::SetWindowLong( hWnd, GWL_STYLE, lStyle );
+    }
+
+    LRESULT lResult = TreeView_GetExtendedStyle( hWnd );
+    if ( ( lResult | TVS_EX_AUTOHSCROLL ) ||
+         ( lResult | TVS_EX_FADEINOUTEXPANDOS ) )
+    {
+        TreeView_SetExtendedStyle( hWnd, 0, TVS_EX_AUTOHSCROLL | TVS_EX_FADEINOUTEXPANDOS );
+    }
+}
+*/
 // @@--------------------------------------------------------------------------
 //
 //

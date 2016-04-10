@@ -1,21 +1,22 @@
 FileView
 --------
-- Windows FileExplorer を参考にして作成中...
 
-## Development environment / Requirements
+File viewer for windows.
+
+### Development environment / Requirements
 - OS:  Windows 7
-- Compiler: used dmd.2.070.2
+- Compiler: used dmd.2.070.2, dmd.2.071.0
 - dwt
 
-## Building
+### Building
 
     $ Build.bat
 
 
-## Links
+### Links
 
 
-## License
+### License
 
     Copyright (c) 2016- Seiji Fujita
 

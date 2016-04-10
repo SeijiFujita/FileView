@@ -3,6 +3,8 @@
 *.debug_log.txt
 *.conf
 FileView01.conf.bakup
+*.png
+
 
 # Windows image file caches
 Thumbs.db
