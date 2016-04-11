@@ -25,6 +25,7 @@ private:
 	bool show_directory;
 	bool show_advancedMenu;
 	int  enterRenameIndex;
+	int  enterRenameCount;
 	string tablePath;
 	Color tableItemBackgroundColor;
 	Table fileTable;
@@ -47,6 +48,7 @@ public:
 		fileTable.addListener(SWT.MouseDoubleClick, new class Listener {
 			void handleEvent(Event event) {
 				dlog("MouseDoubleClick");
+				enterRenameIndex = 0;
 				int index = fileTable.getSelectionIndex();
 				int count = fileTable.getSelectionCount();
 				if (index >= 0 && count == 1) {
@@ -62,12 +64,16 @@ public:
 				// index == 0 is first table
 				int index = fileTable.getSelectionIndex();
 				if (index < 0) {
-					enterRenameIndex = -1;
+					enterRenameIndex = 0;
+					enterRenameCount = 0;
 				} else if (index != enterRenameIndex) {
 					enterRenameIndex = index;
 				} else {
+					++enterRenameCount;
+				}
+				if (enterRenameCount >= 2) {
 					fileTableEditor();
-					enterRenameIndex = -1;
+					enterRenameCount = 0;
 				}
 			}
 		});
