@@ -13,6 +13,7 @@ import std.file;
 import std.path;
 import std.string;
 
+import utils;
 import dlsbuffer;
 
 class FolderTree
@@ -24,6 +25,7 @@ class FolderTree
 	void initUI(Composite parent, string path) {
 		folderTree = new Tree(parent, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.SINGLE | SWT.VIRTUAL);
 		folderTree.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
+		SetTreeViewStyle(folderTree.handle);
 		reloadFolder(path);
 		
 //		TableEditor tableEditor = new TableEditor(table);
@@ -31,21 +33,47 @@ class FolderTree
 		
 		folderTree.addListener(SWT.MouseDown, new class Listener {
 			void handleEvent(Event event) {
+			/*
+				1. Click,DoubleClick でtreeExpandedにより干渉する
+				2. 結果的に	event.x, event.yはの指し示す位置が操作と不一致になる
+				
 				Point point = new Point(event.x, event.y);
 				auto item = cast(folderTreeItem) folderTree.getItem(point);
 				if (item !is null) {
 					dlog("MouseDown: ", item.getfullPath());
+					dlog("event-x.y : ", event.x, ".", event.y);
 					reloadFileTable(item.getfullPath());
+				}
+			*/
+				folderTreeItem[] items = cast(folderTreeItem[])folderTree.getSelection();
+				// dlog("items.length: ", items.length);
+				if (items !is null && items.length >= 1) {
+					string path = items[0].getfullPath();
+					dlog("MouseDown: ", path);
+					reloadFileTable(path);
 				}
 			}
 		});
 		folderTree.addListener(SWT.MouseDoubleClick, new class Listener {
 			void handleEvent(Event event) {
+			/*	
+				1. Click,DoubleClick でtreeExpandedにより干渉する
+				2. 結果的に	event.x, event.yはの指し示す位置が操作と不一致になる
+				
 				Point point = new Point(event.x, event.y);
 				auto item = cast(folderTreeItem)folderTree.getItem(point);
 				if (item !is null) {
 					dlog("MouseDoubleClick: ", item.getfullPath());
+					dlog("event-x.y : ", event.x, ".", event.y);
 					updateFolder(item.getfullPath());
+				}
+			*/	
+				folderTreeItem[] items = cast(folderTreeItem[])folderTree.getSelection();
+				// dlog("items.length: ", items.length);
+				if (items !is null && items.length >= 1) {
+					string path = items[0].getfullPath();
+					dlog("MouseDoubleClick: ", path);
+					updateFolder(path);
 				}
 			}
 		});
@@ -53,7 +81,7 @@ class FolderTree
 			override void treeExpanded(TreeEvent event) {
 				dlog("treeExpanded");
 				TreeItem item = cast(TreeItem) event.item;
-				folderTree.setSelection(item);
+//				folderTree.setSelection(item);
 				foreach(v ; item.getItems()) {
 					v.dispose();
 				}
@@ -98,6 +126,7 @@ class FolderTree
 		
 		void nodeAddPath() {
 			try {
+				dlog("nodeAddPath: ", fullPath);
 				foreach (DirEntry d; dirEntries(fullPath, SpanMode.shallow)) {
 					if (d.isDir()) {
 						addChildPath(this, d.name);
