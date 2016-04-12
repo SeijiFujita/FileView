@@ -24,8 +24,8 @@ class FileTable
 private:
 	bool show_directory;
 	bool show_advancedMenu;
-	int  enterRenameIndex;
-	int  enterRenameCount;
+	// int  enterRenameIndex;
+	// int  enterRenameCount;
 	string tablePath;
 	Color tableItemBackgroundColor;
 	Table fileTable;
@@ -48,7 +48,7 @@ public:
 		fileTable.addListener(SWT.MouseDoubleClick, new class Listener {
 			void handleEvent(Event event) {
 				dlog("MouseDoubleClick");
-				enterRenameIndex = 0;
+				// enterRenameIndex = 0;
 				int index = fileTable.getSelectionIndex();
 				int count = fileTable.getSelectionCount();
 				if (index >= 0 && count == 1) {
@@ -56,6 +56,9 @@ public:
 				}
 			}
 		});
+		/*
+		MouseDoubleClick と競合してタイミングが悪いと問題が発生する事がある
+		
 		fileTable.addListener(SWT.MouseDown, new class Listener {
 			void handleEvent(Event event) {
 				dlog("MouseDown");
@@ -77,6 +80,7 @@ public:
 				}
 			}
 		});
+		*/
 	}
 /*
 	bool checkFileRename(string fn) {
@@ -91,6 +95,9 @@ public:
 */	
 	void fileTableEditor() {
 		enum EditCOLUMN = 0;
+		enum MAX_PATH_LEN = 260; // for Windows SPEC.
+		enum MAX_FILE_LEN = 100; // About my feeling
+		
 		int count = fileTable.getSelectionCount();
 		int index = fileTable.getSelectionIndex();
 		auto item = cast(fileTableItem) fileTable.getItem(index);
@@ -105,17 +112,21 @@ public:
 			
 			string beforeFuillPath = item.getfullPath();
 			string beforeEditData = item.getText(EditCOLUMN);
+			if (beforeFuillPath.length > MAX_PATH_LEN || beforeEditData.length > MAX_FILE_LEN) {
+				return;
+			}
 			//
 			void doRename(string beforeFuillPath, string afeterEditData) {
 				if (baseName(beforeEditData) != afeterEditData) {
 					string fromfile = beforeFuillPath;
 					string tofile = dirName(beforeFuillPath) ~ "\\" ~ afeterEditData;
 					SHFileOperationRename(fromfile, tofile);
+					reloadFileTable();
 				}
 			}
 			
 			// Text で編集を行う
-			Text newEditor = new Text(fileTable, SWT.NONE);
+			Text newEditor = new Text(fileTable, SWT.SINGLE | SWT.BORDER);
 			newEditor.setText(beforeEditData);
 			newEditor.setFocus();
 			newEditor.selectAll();
@@ -141,9 +152,11 @@ public:
 						item.setText(EditCOLUMN, afeterEditData);
 						doRename(beforeFuillPath, afeterEditData);
 						newEditor.dispose();
+						tableEditor.dispose();
 					} else if (e.character == SWT.ESC) {
 						dlog("ESC kye");
 						newEditor.dispose();
+						tableEditor.dispose();
 					}
 				}
 			});
@@ -156,9 +169,9 @@ public:
 					item.setText(EditCOLUMN, afeterEditData);
 					doRename(beforeFuillPath, afeterEditData);
 					newEditor.dispose();
+					tableEditor.dispose();
 				}
 			});
-		
 		}
 	}
 	void setTableColumn() {
@@ -189,6 +202,7 @@ public:
 	}
 	void reloadFileTable(string path) {
 		if (fileTable !is null) {
+			dlog("reloadFileTable");
 			fileTable.removeAll();
 			tableItemcount = 0;
 			tablePath = path;
@@ -367,14 +381,16 @@ public:
 		show_advancedMenu = show_advancedMenu ? false : true;
 	}
 	void extentionOpen() {
+		dlog("extentonOpen");
 		fileTableItem[] items = cast(fileTableItem[]) fileTable.getSelection();
 		if (items.length == 1) {
 			string file = items[0].getfullPath();
 			string ext = extension(file);
-			if (ext !is null) {
-				dlog("extentonOpen");
+			if (file !is null && ext !is null) {
+				dlog("file: ", file);
+				dlog("ext: ", ext);
 				auto p = Program.findProgram(ext);
-				dlog("-command: ", p.command);
+				dlog("command: ", p.command);
 				p.execute(file);
 			}
 		}
@@ -454,6 +470,31 @@ public:
 			wm.clipboard.setContents(data, types);
 		}
 	}
+	
+	int findItems(string name) {
+		if (fileTable !is null && fileTable.items.length) {
+			foreach (int i, v; fileTable.items) {
+		    	if (name == v.getText()) {
+					return i;
+				}
+			}
+		}
+		return -1;
+	}
+	
+	void setCopyedSelection(string[] copyedFiles) {
+		int[] indices;
+		
+		foreach (v ; copyedFiles) {
+	    	int i = findItems(std.path.baseName(v));
+	    	if (i > -1) {
+				indices ~= i;
+			}
+		}
+		if (indices.length) {
+			fileTable.setSelection(indices);
+		}
+	}
 	void execPasete() {
 		string[] buff = stringArrayFromObject(wm.clipboard.getContents(FileTransfer.getInstance()));
 		dlog("execPasete:buff ", buff);
@@ -462,6 +503,7 @@ public:
 				CopyFiletoDir(v, tablePath);
 			}
 			reloadFileTable();
+			setCopyedSelection(buff);
 		}
 	}
 	void execRename() {
@@ -469,8 +511,14 @@ public:
 	}
 	void execNewFile() {
 		string newFile = tablePath ~ PathDelimiter ~ "newfile.txt";
+		RecycleBin(newFile);
 		std.file.write(tablePath, "// hello");
 		reloadFileTable();
+	}
+	void execNewDirectory() {
+		string newFolder = tablePath ~ PathDelimiter ~ "newFolder";
+		MakeDir(newFolder);
+		updateFolder();
 	}
 	bool CreateProcess(string commandLine) {
 		auto hHeap = OS.GetProcessHeap();
