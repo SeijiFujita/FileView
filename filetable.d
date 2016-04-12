@@ -22,20 +22,22 @@ import dlsbuffer;
 class FileTable
 {
 private:
+	Table fileTable;
+	string tablePath;
+	uint tableItemcount;
 	bool show_directory;
 	bool show_advancedMenu;
 	// int  enterRenameIndex;
 	// int  enterRenameCount;
-	string tablePath;
 	Color tableItemBackgroundColor;
-	Table fileTable;
-	uint tableItemcount;
+	Color tableItemClipboardCutColor;
 	
 public:
 	void delegate() updateFolder;
 
 	this() {
 		tableItemBackgroundColor = wm.getColor(230, 230, 230);
+		tableItemClipboardCutColor = wm.getColor(50, 50, 240);
 	}
 	void initUI(Composite parent, string path) {
 		fileTable = new Table(parent, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI | SWT.FULL_SELECTION);
@@ -322,8 +324,8 @@ public:
 		addPopupMenu(menu, "Advanced Menu", &toggle_advanceMenu, 0, SWT.CHECK);
 		addMenuSeparator(menu);
 		//--------------------
-		auto itemDirectDelete = addPopupMenu(menu, "Delete(do not recycle)", &execDelete);
-		
+		auto itemDirectDelete   = addPopupMenu(menu, "Delete(do Not recycle)", &execDelete);
+		auto itemClipbordClear  = addPopupMenu(menu, "ClipbordDataClear", &execClipboardClear);
 		
 		menu.addMenuListener(new class MenuAdapter {
 			override void menuShown(MenuEvent e) {
@@ -345,7 +347,7 @@ public:
 					}
 				}
 				itemPasete.setEnabled(enabled);
-				
+				itemClipbordClear.setEnabled(enabled && show_advancedMenu);
 				//advanced menu
 				itemDirectDelete.setEnabled(show_advancedMenu);
 			}
@@ -453,35 +455,52 @@ public:
 			reloadFileTable();
 		}
 	}
-	void execCut() {
-		// clipboard
-		//@
-	}
-	void execCopy() {
+	// @@----------------------------------------------------------------------
+	// Clipborad 
+	bool clipboardCutFlag; // false:copy / true:cut
+	//
+	void clipboradCutAndCopy(bool cutFlag = false) {
 		// clipboard copy
 		if (fileTable.getSelectionCount() != 0) {
+			dlog("clipboradCutAndCopy: ", cutFlag);
 			auto items = cast(fileTableItem[]) fileTable.getSelection();
 			string[] buff;
 			foreach (v ; items) {
 				buff ~= v.getfullPath();
+				if (cutFlag) {
+					v.setForeground(tableItemClipboardCutColor);
+				}
 			}
 			Object[] data = [new ArrayWrapperString2(buff) ];
 			Transfer[] types = [ FileTransfer.getInstance() ];
 			wm.clipboard.setContents(data, types);
+			clipboardCutFlag = cutFlag;
+		
 		}
 	}
-	
-	int findItems(string name) {
+	bool clipbordAvailable() {
+		TransferData[] available = wm.clipboard.getAvailableTypes();
+		bool enabled = false;
+		if (available !is null) {
+			for (int i = 0; i < available.length; i++) {
+				if (FileTransfer.getInstance().isSupportedType(available[i])) {
+					enabled = true;
+					break;
+				}
+			}
+		}
+		return enabled;
+	}
+	int findItems(string text) {
 		if (fileTable !is null && fileTable.items.length) {
 			foreach (int i, v; fileTable.items) {
-		    	if (name == v.getText()) {
+		    	if (text == v.getText()) {
 					return i;
 				}
 			}
 		}
 		return -1;
 	}
-	
 	void setCopyedSelection(string[] copyedFiles) {
 		int[] indices;
 		
@@ -495,16 +514,36 @@ public:
 			fileTable.setSelection(indices);
 		}
 	}
-	void execPasete() {
-		string[] buff = stringArrayFromObject(wm.clipboard.getContents(FileTransfer.getInstance()));
-		dlog("execPasete:buff ", buff);
-		if (buff !is null && buff.length && checkCopy(buff[0], tablePath)) {
-			foreach(v ; buff) {
-				CopyFiletoDir(v, tablePath);
+	void clipbordPasete() {
+		if (clipbordAvailable()) {
+			string[] buff = stringArrayFromObject(wm.clipboard.getContents(FileTransfer.getInstance()));
+			dlog("execPasete:buff ", buff);
+			if (buff !is null && buff.length && checkCopy(buff[0], tablePath)) {
+				foreach(v ; buff) {
+					int status = CopyFiletoDir(v, tablePath);
+					if (status == 0 && clipboardCutFlag) {
+						// delete source file
+						RecycleBin(v);
+					}
+				}
+				clipboardCutFlag = false;
+				reloadFileTable();
+				setCopyedSelection(buff);
 			}
-			reloadFileTable();
-			setCopyedSelection(buff);
 		}
+	}
+	// @@----------------------------------------------------------------------
+	void execCut() {
+		clipboradCutAndCopy(true);
+	}
+	void execCopy() {
+		clipboradCutAndCopy();
+	}
+	void execPasete() {
+		clipbordPasete();
+	}
+	void execClipboardClear() {
+		wm.clipboard.clearContents();
 	}
 	void execRename() {
 		fileTableEditor();

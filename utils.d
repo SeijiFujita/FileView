@@ -50,8 +50,11 @@ void RmDir(string path) {
         std.file.rmdirRecurse(path);
     }
 }
-
-void CopyFiletoDir(string fromFile, string todir) {
+// CopyFiletoDir
+// return stat
+// 0:copy success / 0 != not copyed
+int CopyFiletoDir(string fromFile, string todir) {
+	int stat = -1;
 	if (fromFile.exists()) {
 		if (!todir.exists()) {
 			MakeDir(todir);
@@ -66,7 +69,7 @@ void CopyFiletoDir(string fromFile, string todir) {
 					RecycleBin(toFile);
 				}
 				string[] fromFiles = [ fromFile ];
-				SHFileOperationCopy(fromFiles, toFile);
+				stat = SHFileOperationCopy(fromFiles, toFile);
 				// std.file.copy(fromFile, toFile);
 				dlog("copy done..");
 			}
@@ -75,11 +78,12 @@ void CopyFiletoDir(string fromFile, string todir) {
 			}
 		}
 		// isFile
-		
+		//
 	}
 	else {
 		throw new Exception("CopyFiletoDir Error. See " ~ __FILE__ ~ to!string(__LINE__));
 	}
+	return stat;
 }
 // @@--------------------------------------------------------------------------
 //
@@ -99,7 +103,7 @@ StringT stringToStringT(string st) {
 	return StrToTCHARs(0, sb.toString(), true);
 }
 
-void SHFileOperationCopy(string[] fromFiles, string toPath) {
+int SHFileOperationCopy(string[] fromFiles, string toPath) {
 	dlog("SHFileOperationCopy");
 	dlog("fromFiles:");
 	foreach(v; fromFiles) {
@@ -120,9 +124,10 @@ void SHFileOperationCopy(string[] fromFiles, string toPath) {
 		string err = getLastErrorText();
 		dlog("GetLastError: ", err);
 	}
+	return stat;
 }
 
-void SHFileOperationMove(string[] fromFiles, string toPath) {
+int SHFileOperationMove(string[] fromFiles, string toPath) {
 	dlog("SHFileOperationMove");
 	dlog("fromFiles:");
 	foreach(v; fromFiles) {
@@ -143,9 +148,10 @@ void SHFileOperationMove(string[] fromFiles, string toPath) {
 		string err = getLastErrorText();
 		dlog("GetLastError: ", err);
 	}
+	return stat;
 }
 
-void SHFileOperationRename(string fromFile, string toFile) {
+int SHFileOperationRename(string fromFile, string toFile) {
 	dlog("SHFileOperationRename");
 	dlog("fromFile: ", fromFile);
 	dlog("toFile: ", toFile);
@@ -163,10 +169,11 @@ void SHFileOperationRename(string fromFile, string toFile) {
 		string err = getLastErrorText();
 		dlog("GetLastError: ", err);
 	}
+	return stat;
 }
 
 
-void SHFileOperationDelete(string[] files) {
+int SHFileOperationDelete(string[] files) {
 	dlog("SHFileOperationDelete");
 	
 	StringT buffer = stringArrayToStringT(files);
@@ -181,15 +188,16 @@ void SHFileOperationDelete(string[] files) {
 		dlog("GetLastError: ", getLastErrorText());
 //		MessageBox.showError(getLastErrorText(), "Error");
 	}
+	return stat;
 }
 
 
-void RecycleBin(string file) {
+int RecycleBin(string file) {
 	string[] rb = [ file ];
-	RecycleBin(rb);
+	return RecycleBin(rb);
 }
 
-void RecycleBin(string[] files) {
+int RecycleBin(string[] files) {
 	dlog("RecycleBin");
 	StringBuffer buff = new StringBuffer();
 	foreach (v ; files) {
@@ -212,6 +220,7 @@ void RecycleBin(string[] files) {
 		dlog("GetLastError: ", err);
 //		MessageBox.showError(getLastErrorText(), "Error");
 	}
+	return stat;
 }
 
 string getLastErrorText() {
