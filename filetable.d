@@ -37,7 +37,7 @@ public:
 
 	this() {
 		tableItemBackgroundColor = wm.getColor(230, 230, 230);
-		tableItemClipboardCutColor = wm.getColor(50, 50, 240);
+		tableItemClipboardCutColor = wm.getColor(40, 40, 240);
 	}
 	void initUI(Composite parent, string path) {
 		fileTable = new Table(parent, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI | SWT.FULL_SELECTION);
@@ -316,6 +316,7 @@ public:
 		addMenuSeparator(menu);
 		//--------------------
 		addPopupMenu(menu, "NewFile", &execNewFile);
+		addPopupMenu(menu, "NewFolder", &execNewDirectory);
 		addPopupMenu(menu, "Delete", &execRecycleBin);
 		addPopupMenu(menu, "Rename", &execRename);
 		addMenuSeparator(menu);
@@ -501,7 +502,7 @@ public:
 		}
 		return -1;
 	}
-	void setCopyedSelection(string[] copyedFiles) {
+	void setStringSelection(string[] copyedFiles) {
 		int[] indices;
 		
 		foreach (v ; copyedFiles) {
@@ -528,9 +529,14 @@ public:
 				}
 				clipboardCutFlag = false;
 				reloadFileTable();
-				setCopyedSelection(buff);
+				setStringSelection(buff);
 			}
 		}
+	}
+	void clipboardClear() {
+		wm.clipboard.clearContents();
+		clipboardCutFlag = false;
+		reloadFileTable();
 	}
 	// @@----------------------------------------------------------------------
 	void execCut() {
@@ -543,15 +549,17 @@ public:
 		clipbordPasete();
 	}
 	void execClipboardClear() {
-		wm.clipboard.clearContents();
+		clipboardClear();
 	}
 	void execRename() {
 		fileTableEditor();
 	}
 	void execNewFile() {
 		string newFile = tablePath ~ PathDelimiter ~ "newfile.txt";
-		RecycleBin(newFile);
-		std.file.write(tablePath, "// hello");
+		if (newFile.exists()) {
+			RecycleBin(newFile);
+		}
+		std.file.write(newFile, "// hello\n");
 		reloadFileTable();
 	}
 	void execNewDirectory() {

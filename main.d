@@ -151,6 +151,7 @@ class MainForm
 		Composite container = createComposit(3, GridData.FILL_HORIZONTAL);
 		//
 		Button updir = wm.createButton(container, "←", SWT.PUSH,  35);
+		updir.setToolTipText("Go to root direction");
 		// updir.setImage(LarrowIcon);
 		void onSelection_updir(SelectionEvent e) {
 			string newdir = buildNormalizedPath(dirName(pathEdit.getText()));
@@ -177,6 +178,7 @@ class MainForm
 	    });
 		//
 		Button menu = wm.createButton(container, "≡", SWT.PUSH, 35);
+		menu.setToolTipText("Menu dlalog");
 		// menu.setImage(MenuIcon);
 		
 		void onSelection_menu(SelectionEvent e) {
