@@ -25,6 +25,7 @@ class FolderTree
 	void initUI(Composite parent, string path) {
 		folderTree = new Tree(parent, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.SINGLE | SWT.VIRTUAL);
 		folderTree.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
+		setDrag(folderTree);
 		SetTreeViewStyle(folderTree.handle);
 		reloadFolder(path);
 		
@@ -36,6 +37,7 @@ class FolderTree
 			/*
 				1. Click,DoubleClick でtreeExpandedにより干渉する
 				2. 結果的に	event.x, event.yはの指し示す位置が操作と不一致になる
+				3. folderTree.getSelection() で選択されているitem を対象とるす
 				
 				Point point = new Point(event.x, event.y);
 				auto item = cast(folderTreeItem) folderTree.getItem(point);
@@ -45,12 +47,13 @@ class FolderTree
 					reloadFileTable(item.getfullPath());
 				}
 			*/
-				folderTreeItem[] items = cast(folderTreeItem[])folderTree.getSelection();
-				// dlog("items.length: ", items.length);
-				if (items !is null && items.length >= 1) {
-					string path = items[0].getfullPath();
-					dlog("MouseDown: ", path);
-					reloadFileTable(path);
+				if (event.button == 1) { // mouse left button
+					folderTreeItem[] items = cast(folderTreeItem[])folderTree.getSelection();
+					if (items !is null && items.length >= 1) {
+						string path = items[0].getfullPath();
+						dlog("MouseDown: ", path);
+						reloadFileTable(path);
+					}
 				}
 			}
 		});
@@ -59,7 +62,7 @@ class FolderTree
 			/*	
 				1. Click,DoubleClick でtreeExpandedにより干渉する
 				2. 結果的に	event.x, event.yはの指し示す位置が操作と不一致になる
-				
+				3. folderTree.getSelection() で選択されているitem を対象とるす
 				Point point = new Point(event.x, event.y);
 				auto item = cast(folderTreeItem)folderTree.getItem(point);
 				if (item !is null) {
@@ -164,5 +167,33 @@ class FolderTree
 			}
 		}
 	}
+	
+	void setDrag(Tree tt) {
+		//
+		int operations = DND.DROP_COPY;
+		DragSource source = new DragSource(tt, operations);
+		source.setTransfer([TextTransfer.getInstance()]);
+		source.addDragListener(new class DragSourceListener {
+			// event.doit = true でドラックできる事をOLEに知らせる
+			override void dragStart(DragSourceEvent event) {
+				dlog("dragStart:event.detail: ", event.detail);
+				event.doit = (tt.getSelectionCount() == 1);
+			}
+			// ドラックするデータを作成し evet.data にセット
+			override void dragSetData(DragSourceEvent event) {
+				dlog("dragSetData: event.detail: ", event.detail);
+				auto items = cast(folderTreeItem[]) tt.getSelection();
+				event.data = stringcast(items[0].getfullPath());
+				event.detail = DND.DROP_COPY;
+			}
+			// ドロップ後(貼り付け後)の終了処理
+			// 移動を行った後はソースを削除しないと移動にならない
+			override void dragFinished(DragSourceEvent event) {
+				dlog("dragFinished event: ", event);
+			}
+		});
+	}
+
+
 }
 

@@ -298,6 +298,7 @@ public:
 		}
 		return fileDate;
 	}
+	// Popup Menu
 	void setPopup(Table parent) {
 		Menu menu = new Menu(parent);
 		parent.setMenu(menu);
@@ -604,6 +605,7 @@ public:
 		return result;
 	}
 	
+	bool self_DragFlag;
 	// DND.DROP_COPY のみをサポート
 	// DND.DROP_MOVE は行わない
 	void setDragDrop(Table tt) {
@@ -622,6 +624,7 @@ public:
 			// event.doit = true でドラックできる事をOLEに知らせる
 			override void dragStart(DragSourceEvent event) {
 				dlog("dragStart:event.detail: ", event.detail);
+				self_DragFlag = true;
 				event.doit = (tt.getSelectionCount() != 0);
 			}
 			// ドラックするデータを作成し evet.data にセット
@@ -655,6 +658,7 @@ version (none) {
 					updateFolder();
 				}
 } // version
+				self_DragFlag = false;
 				dlog("dragFinished:end");
 			}
 		});
@@ -683,7 +687,7 @@ version (none) {
 			override void drop(DropTargetEvent event) {
 				// event.data の内容を確認してドロップに対応した処理を行う
 				dlog("drop: DropTargetEvent event: ", event);
-				if (FileTransfer.getInstance().isSupportedType(event.currentDataType)) {
+				if (self_DragFlag != true && FileTransfer.getInstance().isSupportedType(event.currentDataType)) {
 					string[] buff = stringArrayFromObject(event.data);
 					dlog("buff: ", buff);
 					dlog("tablePath: ", tablePath);

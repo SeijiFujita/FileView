@@ -38,19 +38,22 @@ class Bookmark
 	void initUI(Composite parent) {
 		bookmarkTree = new Tree(parent, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.SINGLE | SWT.VIRTUAL);
 		bookmarkTree.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
-		
+		setPopup(bookmarkTree);
+		setDrop(bookmarkTree);
 		bookmarkView();
 		
 		bookmarkTree.addListener(SWT.MouseDown, new class Listener {
 			void handleEvent(Event event) {
-				Point point = new Point(event.x, event.y);
-				auto item = cast(bookmarkItem)bookmarkTree.getItem(point);
-				if (item !is null) {
-					dlog("MouseDown: ", item.getfullPath());
-					string path = item.getfullPath();
-					if (path.length && path.isDir()) {
-						// reloadFileTable(path);
-						updateFolder(item.getfullPath());
+				if (event.button == 1) { // mouse left button
+					Point point = new Point(event.x, event.y);
+					auto item = cast(bookmarkItem)bookmarkTree.getItem(point);
+					if (item !is null) {
+						dlog("MouseDown: ", item.getfullPath());
+						string path = item.getfullPath();
+						if (path.length && path.isDir()) {
+							// reloadFileTable(path);
+							updateFolder(item.getfullPath());
+						}
 					}
 				}
 			}
@@ -113,18 +116,57 @@ version (none) {
 			return item;
 		}
 	}
-	// bookmark は Bookmarkの追加の目的の Drop を行う
+	// Popup Menu
+	void setPopup(Tree parent) {
+		Menu menu = new Menu(parent);
+		parent.setMenu(menu);
+		
+		addMenuSeparator(menu);
+		//--------------------
+		addPopupMenu(menu, "BooknarkEditor", &dg_dummy);
+		addPopupMenu(menu, "Delete", &dg_dummy);
+		addMenuSeparator(menu);
+		addPopupMenu(menu, "Reload", &bookmarkView);
+		auto itemDummy = addPopupMenu(menu, "Dummy", &dg_dummy);
+		
+		menu.addMenuListener(new class MenuAdapter {
+			override void menuShown(MenuEvent e) {
+				itemDummy.setEnabled(false);
+			}
+		});
+	}
+	MenuItem addPopupMenu(Menu menu, string text, void delegate() dg, int accelerator = 0, int style = SWT.NONE) {
+		MenuItem item = new MenuItem(menu, style);
+		item.setText(text);
+		if (accelerator != 0) {
+			item.setAccelerator(accelerator); // SWT.CTRL + 'A'
+		}
+		item.addSelectionListener(new class SelectionAdapter {
+			override void widgetSelected(SelectionEvent event) {
+				dg();
+			}
+		});
+		return item;
+	}
+    void addMenuSeparator(Menu menu) {
+		new MenuItem(menu, SWT.SEPARATOR);
+	}
+	void dg_dummy() {
+	}
+
+	// Bookmarkの追加の目的の Drop を行う
+	//
 	void setDrop(Tree tt) {
 		int operations = DND.DROP_COPY;
 		DropTarget target = new DropTarget(tt, operations);
-		target.setTransfer([FileTransfer.getInstance()]);
+		target.setTransfer([TextTransfer.getInstance()]);
 		target.addDropListener(new class DropTargetAdapter {
 			// ドラッグ中のマウスカーソルが入ってきた時にdragEnterが呼ばれます
 			// ドロップ可能な場合はevent.detail = DND.DROP_COPY で応答を行います
 			override void dragEnter(DropTargetEvent event) {
 				dlog("dragEnter");
 				dlog("DropTargetEvent event: ", event);
-				if (FileTransfer.getInstance().isSupportedType(event.currentDataType)) {
+				if (TextTransfer.getInstance().isSupportedType(event.currentDataType)) {
 					event.detail = DND.DROP_COPY;
 				} else {
 					event.detail = DND.DROP_NONE;
@@ -139,19 +181,11 @@ version (none) {
 			override void drop(DropTargetEvent event) {
 				// event.data の内容を確認してドロップに対応した処理を行う
 				dlog("drop: DropTargetEvent event: ", event);
-				if (FileTransfer.getInstance().isSupportedType(event.currentDataType)) {
-					string[] buff = stringArrayFromObject(event.data);
-					dlog("buff: ", buff);
-/*				
-					if (buff.length >= 1 && checkCopy(buff[0], tablePath)) {
-						foreach(v ; buff) {
-							CopyFiletoDir(v, tablePath);
-						}
-						updateFolder();
-					}
-*/
+				if (event.data !is null) {
+					string st = stringcast(cast(Object)event.data);
+					defaultBookmarks ~= st;
+					bookmarkView();
 				}
-				dlog("drop: DropTargetEvent event: ", event);
 			}
 		});
 	}
