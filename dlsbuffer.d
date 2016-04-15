@@ -1,4 +1,13 @@
 // Written in the D programming language.
+/*
+/*
+ * dmd 2.070.0 - 2.071.0
+ *
+ * Copyright Seiji Fujita 2016.
+ * Distributed under the Boost Software License, Version 1.0.
+ * http://www.boost.org/LICENSE_1_0.txt
+ */
+
 /**
 debuglog.d
 output debuglog
@@ -12,10 +21,6 @@ License: Distributed under the Boost Software License, Version 1.0.
 Authors: Seiji Fujita
 
 Compiler: dmd.2.070.0 / windows
-
-
-
-
 
 
 実装済み

@@ -1,8 +1,13 @@
 // Written in the D programming language.
-//
-// dwt_base.d
-// dmd 2.070.0
-//
+/*
+/*
+ * dmd 2.070.0 - 2.071.0
+ *
+ * Copyright Seiji Fujita 2016.
+ * Distributed under the Boost Software License, Version 1.0.
+ * http://www.boost.org/LICENSE_1_0.txt
+ */
+
 module utils;
 
 import org.eclipse.swt.all;

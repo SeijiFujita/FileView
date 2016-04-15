@@ -1,8 +1,13 @@
 ﻿// Written in the D programming language.
 /*
- * dmd 2.070.0
+/*
+ * dmd 2.070.0 - 2.071.0
  *
+ * Copyright Seiji Fujita 2016.
+ * Distributed under the Boost Software License, Version 1.0.
+ * http://www.boost.org/LICENSE_1_0.txt
  */
+
 module main;
 
 import org.eclipse.swt.all;
@@ -28,11 +33,6 @@ class MainForm
 	Combo		pathEdit;
 	string		DirectoryPath;
 	
-	// Image		folderIcon;
-	// Image		LarrowIcon;
-	// Image		MenuIcon;
-	
-	
 	this() {
 		// utils.wm is grobal
 		wm = new WindowManager("FileView");
@@ -41,10 +41,6 @@ class MainForm
 		shell = wm.getShell();
 		shellSetLayout();
 		shell.setImage(wm.loadIcon());
-		
-//		folderIcon = wm.image("folder.ico");
-//		LarrowIcon = wm.image("larrow24x24.png");
-//		MenuIcon   = wm.image("Menu32x32.png");
 		
 		tfolder  = new FolderTree;
 		tfile    = new FileTable;
@@ -60,14 +56,26 @@ class MainForm
 		tfile.updateFolder    = &updateFolder;
 		
 		wm.run();
-		cf.setString(LastPath, DirectoryPath);
+		cf.setLastPath(DirectoryPath);
 		cf.saveConfig();
 	}
-	
+	/*
+	string open(string selectdir = null) {
+		initUI();
+		
+		wm.run();
+		cf.setString(LastPath, DirectoryPath);
+		cf.saveConfig();
+		if (dialogResult) {
+			return selectDirectoryPath;
+		}
+		return null;
+	}
+	*/
 	void setStartupPath() {
 		string arg = getCommandLine();
 		if (arg is null) {
-			cf.getString(LastPath, arg);
+			cf.getLastPath(arg);
 		}
 		setDirectoryPath(arg);
 	}
@@ -183,10 +191,9 @@ class MainForm
 		
 		void onSelection_menu(SelectionEvent e) {
 			auto ddlg = new SettingDialog(shell);
-			string d = ddlg.open();
-//			if (d !is null) {
-//				dirBox.setText(d);
-//			}
+			if (ddlg.open()) {
+				bookmark.updateBookmark();
+			}
 		}
 		menu.addSelectionListener(
 			dgSelectionListener(SelectionListener.SELECTION, &onSelection_menu)

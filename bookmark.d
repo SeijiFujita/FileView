@@ -1,7 +1,11 @@
 // Written in the D programming language.
 /*
- * dmd 2.070.0
+/*
+ * dmd 2.070.0 - 2.071.0
  *
+ * Copyright Seiji Fujita 2016.
+ * Distributed under the Boost Software License, Version 1.0.
+ * http://www.boost.org/LICENSE_1_0.txt
  */
 
 module bookmark;
@@ -23,7 +27,8 @@ class Bookmark
 	void delegate(string) updateFolder;
 	void delegate(string) reloadFileTable;
 	
-	string[] defaultBookmarks = [
+	/*
+	string[] loadBookmarkData = [
 		"C:\\Home",
 		"C:\\D",
 		"C:\\D\\rakugaki\\dwtdev",
@@ -31,16 +36,25 @@ class Bookmark
 		"C:\\D\\rakugaki\\Gtkd",
 	];
 	
-	this() {
-		
+	struct BookmarkData {
+		string _text;
+		string _path;
+		void set(string text, string path) { _text = text; _path = path; }
+		@property void text(string text) { _text = text; }
+		@property string text() { return _text; }
+		@property void path(string path) { _path = path; }
+		@property string path() { return _path; }
 	}
+	*/
+	
+	this() {}
 	
 	void initUI(Composite parent) {
 		bookmarkTree = new Tree(parent, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.SINGLE | SWT.VIRTUAL);
 		bookmarkTree.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
 		setPopup(bookmarkTree);
 		setDrop(bookmarkTree);
-		bookmarkView();
+		updateBookmark();
 		
 		bookmarkTree.addListener(SWT.MouseDown, new class Listener {
 			void handleEvent(Event event) {
@@ -58,32 +72,32 @@ class Bookmark
 				}
 			}
 		});
-version (none) {
-		bookmarkTree.addListener(SWT.MouseDoubleClick, new class Listener {
-			void handleEvent(Event event) {
-				Point point = new Point(event.x, event.y);
-				auto item = cast(bookmarkItem)bookmarkTree.getItem(point);
-				if (item !is null) {
-					dlog("MouseDoubleClick: ", item.getfullPath());
-					string path = item.getfullPath();
-					if (path.length && path.isDir()) {
-						updateFolder(item.getfullPath());
-					}
-				}
-			}
-		});
-} // version
 	}
 	
-	void bookmarkView() {
+	void updateBookmark() {
 		if (bookmarkTree !is null) {
 			bookmarkTree.removeAll();
 			auto itemTop = new bookmarkItem(bookmarkTree, SWT.NONE);
-			foreach (v ; defaultBookmarks) {
-				auto item = new bookmarkItem(itemTop, SWT.NONE);
-				item.setPath(v);
+			string[] bookmarks;
+			if (cf.getBookmarks(bookmarks)) {
+				foreach (v ; bookmarks) {
+					auto item = new bookmarkItem(itemTop, SWT.NONE);
+					item.setPath(v);
+				}
+				itemTop.setExpanded(true);
 			}
-			itemTop.setExpanded(true);
+		}
+	}
+	void addBookmarkData(string data) {
+		if (data.length) {
+			string[] bookmarks;
+			if (cf.getBookmarks(bookmarks)) {
+				bookmarks ~= data;
+				cf.setBookmarks(bookmarks);
+			}
+			else {
+				cf.setBookmarks([ data ]);
+			}
 		}
 	}
 	class bookmarkItem : TreeItem
@@ -126,7 +140,7 @@ version (none) {
 		addPopupMenu(menu, "BooknarkEditor", &dg_dummy);
 		addPopupMenu(menu, "Delete", &dg_dummy);
 		addMenuSeparator(menu);
-		addPopupMenu(menu, "Reload", &bookmarkView);
+		addPopupMenu(menu, "Reload", &updateBookmark);
 		auto itemDummy = addPopupMenu(menu, "Dummy", &dg_dummy);
 		
 		menu.addMenuListener(new class MenuAdapter {
@@ -176,15 +190,14 @@ version (none) {
 			// ドラッグ中に修飾キーが押されて処理が変更された時の処理
 			override void dragOperationChanged(DropTargetEvent event) {
 				dlog("dragOperationChanged: event: ", event);
-				
 			}
 			override void drop(DropTargetEvent event) {
 				// event.data の内容を確認してドロップに対応した処理を行う
 				dlog("drop: DropTargetEvent event: ", event);
 				if (event.data !is null) {
 					string st = stringcast(cast(Object)event.data);
-					defaultBookmarks ~= st;
-					bookmarkView();
+					addBookmarkData(st);
+					updateBookmark();
 				}
 			}
 		});

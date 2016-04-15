@@ -1,4 +1,13 @@
-//
+// Written in the D programming language.
+/*
+/*
+ * dmd 2.070.0 - 2.071.0
+ *
+ * Copyright Seiji Fujita 2016.
+ * Distributed under the Boost Software License, Version 1.0.
+ * http://www.boost.org/LICENSE_1_0.txt
+ */
+
 /*
  .Associative Arrays(hashmap, hashtable, 連想配列)を使用してプログラムの内のデータの保存をする
  .ファイルの保存には JSON 使用する
@@ -16,14 +25,6 @@ import dlsbuffer;
 
 version = USE_BACKUP;
 
-immutable string productName     = "productName";
-immutable string productVersion  = "productVersion";
-immutable string buildDATE       = "buildDATE";
-immutable string buildDMD        = "buildDMD";
-//
-immutable string LastPath        = "LastPath";
-
-
 enum CONFIG_EXT = ".conf";
 enum BACKUP_EXT = ".bakup";
 enum TEMP_EXT   = ".temp";
@@ -32,11 +33,19 @@ Config cf;
 
 class Config
 {
+	static immutable string productName     = "productName";
+	static immutable string productVersion  = "productVersion";
+	static immutable string buildDATE       = "buildDATE";
+	static immutable string buildDMD        = "buildDMD";
+	//
+	static immutable string LastPath        = "LastPath";
+	static immutable string BookmarkData	 = "BookmarkData";
+	
 private:
-	string[string]		sValue;
-	long[string]		iValue;
-	string[][string]	sArray;
-	long[][string] 		iArray;
+	string[string]		stringValue;  // STRING
+	long[string]		integerValue; // INTEGER
+	string[][string]	stringArray;  // STRING ARRAY
+	long[][string] 		integerArray; // INTEGER ARRAY
 	
 	string _productPath;
 	string _productName;
@@ -84,12 +93,12 @@ private:
 		dlog("_configTempPath: ", _configTempPath);
 		dlog("_productPath:    ", _productPath);
 		dlog("_productName:    ", _productName);
-		dlog("sValue: ", sValue);
-		dlog("iValue: ", iValue);
-		foreach(key; sArray.keys)
-			dlog("sArray: ", key, ":", sArray[key]);
-		foreach(key; iArray.keys)
-			dlog("iArray: ", key, ":", iArray[key]);
+		dlog("stringValue: ", stringValue);
+		dlog("integerValue: ", integerValue);
+		foreach(key; stringArray.keys)
+			dlog("stringArray: ", key, ":", stringArray[key]);
+		foreach(key; integerArray.keys)
+			dlog("integerArray: ", key, ":", integerArray[key]);
 	}
 
 public:
@@ -98,71 +107,145 @@ public:
 		setupPath();
 		loadConfig();
 	}
+	//
 	void setString(string key, string value) {
-		sValue[key] = value;
+		stringValue[key] = value;
 	}
-	void setInt(string key, int value) {
-		iValue[key] = to!long(value);
+	void setInteger(string key, int value) {
+		integerValue[key] = cast(long) value;
 	}
-	void setLong(string key, long value) {
-		iValue[key] = value;
+	void setInteger(string key, long value) {
+		integerValue[key] = value;
 	}
-	void setSArray(string key, string[] value) {
-		sArray[key] = value;
+	void setStringArray(string key, string[] value) {
+		stringArray[key] = value;
 	}
-	void setLArray(string key, int[] value) {
+	void setIntegerArray(string key, int[] value) {
 		long[] array;
 		foreach(v; value) {
 			long i = v;
 			array ~= i;
 		}
-		iArray[key] = array;
+		integerArray[key] = array;
 	}
-	void setLArray(string key, long[] value) {
-		iArray[key] = value;
+	void setIntegerArray(string key, long[] value) {
+		integerArray[key] = value;
 	}
-	//
-	private string getString(string key) {
-		return sValue[key];
-	}
+	// get string
 	bool chkStringKey(string key) {
-		return (key in sValue) ? true : false;
+		return (key in stringValue) ? true : false;
+	}
+	string getString(string key) {
+		return stringValue[key];
 	}
 	bool getString(string key, ref string value) {
-		bool result;
-		if (key in sValue) {
-			value  = sValue[key];
+		bool result = false;
+		if (key in stringValue) {
+			value  = stringValue[key];
 			result = true;
-		} else {
-			value  = null;
-			result = false;
 		}
 		return result;
 	}
-	private long getLong(string key) {
-		return iValue[key];
+	// integer
+	bool chkIntegerKey(string key) {
+		return (key in integerValue) ? true : false;
 	}
-	private string[] getSArray(string key) {
-		return sArray[key];
+	long getInteger(string key) {
+		return integerValue[key];
 	}
-	bool chkSArrayKey(string key) {
-		return (key in sArray) ? true : false;
-	}
-	bool getSArray(string key, ref string[] value) {
-		bool result;
-		if (key in sArray) {
-			value = sArray[key];
+	bool getInteger(string key, ref int value) {
+		bool result = false;
+		if (key in integerValue) {
+			value  = cast(int)integerValue[key];
 			result = true;
-		} else {
-			value = null;
-			result = false;
 		}
 		return result;
 	}
-	private long[] getIArray(string key) {
-		return iArray[key];
+	bool getInteger(string key, ref long value) {
+		bool result = false;
+		if (key in integerValue) {
+			value  = integerValue[key];
+			result = true;
+		}
+		return result;
 	}
-	
+	// string array
+	bool chkStringArrayKey(string key) {
+		return (key in stringArray) ? true : false;
+	}
+	string[] getStringArray(string key) {
+		return stringArray[key];
+	}
+	bool getStringArray(string key, ref string[] value) {
+		bool result = false;
+		if (key in stringArray) {
+			value = stringArray[key];
+			result = true;
+		}
+		return result;
+	}
+	// integer array
+	bool chkIntegerArrayKey(string key) {
+		return (key in integerArray) ? true : false;
+	}
+	long[] getIntegerArray(string key) {
+		return integerArray[key];
+	}
+	bool getIntegerArray(string key, ref long[] value) {
+		bool result = false;
+		if (key in integerArray) {
+			value = integerArray[key];
+			result = true;
+		}
+		return result;
+	}
+	bool getIntegerArray(string key, ref int[] value) {
+		bool result = false;
+		if (key in integerArray) {
+			int[] intvalue;
+			foreach (v ; integerArray[key]) {
+				intvalue ~= to!int(v);
+			}
+			value = intvalue;
+			result = true;
+		}
+		return result;
+	}
+	// key remove
+	void stringValueRemoveKey(string key) {
+		stringValue.remove(key);
+	}
+	void integerValueRemoveKey(string key) {
+		integerValue.remove(key);
+	}
+	void stringArrayRemoveKey(string key) {
+		stringArray.remove(key);
+	}
+	void integerArrayRmoveKey(string key) {
+		integerArray.remove(key);
+	}
+// @---------------------------------------------------------------------------
+	// LastPath
+	void setLastPath(string path) {
+		setString(LastPath, path);
+	}
+	bool getLastPath(ref string path) {
+		return getString(LastPath, path);
+	}
+	// bookmarks
+	void setBookmarks(string[] data) {
+		setStringArray(BookmarkData, data);
+	}
+	bool getBookmarks(ref string[] data) {
+		return getStringArray(BookmarkData, data);
+	}
+	void BookmarksDataClear() {
+		stringArray.remove(BookmarkData);
+	}
+
+
+// @---------------------------------------------------------------------------
+
 version (none) {
 	void printcrlf() {
 		int n = to!int('\n');
@@ -215,20 +298,20 @@ version (none) {
 				if (jroot[key].type == JSON_TYPE.STRING) {
 					setString(key, jroot[key].str);
 				} else if (jroot[key].type == JSON_TYPE.INTEGER) {
-					setLong(key, jroot[key].integer);
+					setInteger(key, jroot[key].integer);
 				} else if (jroot[key].type == JSON_TYPE.ARRAY) {
 					if (jroot[key][0].type == JSON_TYPE.STRING) {
 						string[] str;
 						foreach(v; jroot[key].array) {
 							str ~= v.str();
 						}
-						setSArray(key, str);
+						setStringArray(key, str);
 					} else if (jroot[key][0].type == JSON_TYPE.INTEGER) {
 						long[] l;
 						foreach(v; jroot[key].array) {
 							l ~= v.integer();
 						}
-						setLArray(key, l);
+						setIntegerArray(key, l);
 					} else {
 						assert(false, "loadConfig: JSON Array errror" ~ __FILE__ ~ ":" ~ to!string(__LINE__));
 					}
@@ -249,17 +332,17 @@ version (none) {
 	void saveConfig() {
 		// conf to json
 	    JSONValue jroot = ["@config": "type01"];	// dummy
-		foreach (key; sValue.keys) {
+		foreach (key; stringValue.keys) {
 		    jroot[key] = getString(key);
 		}
-		foreach (key; iValue.keys) {
-			jroot[key] = getLong(key);
+		foreach (key; integerValue.keys) {
+			jroot[key] = getInteger(key);
 		}
-		foreach (key; sArray.keys) {
-			jroot[key] = getSArray(key);
+		foreach (key; stringArray.keys) {
+			jroot[key] = getStringArray(key);
 		}
-		foreach (key; iArray.keys) {
-			jroot[key] = getIArray(key);
+		foreach (key; integerArray.keys) {
+			jroot[key] = getIntegerArray(key);
 		}
 		// writeln(readerbleJson(jroot.toString()));
 		
@@ -273,12 +356,12 @@ version (none) {
 			exRename(_configTempPath, _configFilePath);
 		}
 	}
-	void exRemove(string f) {
+	private void exRemove(string f) {
 		if (exists(f)) {
 			remove(f);
 		}
 	}
-	void exRename(string from, string to) {
+	private void exRename(string from, string to) {
 		if (exists(from)) {
 			exRemove(to);
 			rename(from, to);
