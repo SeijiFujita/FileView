@@ -17,6 +17,8 @@ import std.file;
 import std.path;
 
 import conf;
+import utils;
+import setting;
 import dlsbuffer;
 
 class Bookmark
@@ -137,7 +139,7 @@ class Bookmark
 		
 		addMenuSeparator(menu);
 		//--------------------
-		addPopupMenu(menu, "BooknarkEditor", &dg_dummy);
+		addPopupMenu(menu, "BooknarkEditor", &execSettingDialog);
 		addPopupMenu(menu, "Delete", &dg_dummy);
 		addMenuSeparator(menu);
 		addPopupMenu(menu, "Reload", &updateBookmark);
@@ -167,6 +169,15 @@ class Bookmark
 	}
 	void dg_dummy() {
 	}
+	void execSettingDialog() {
+		enum BookmarkEditor = 3;
+		auto ddlg = new SettingDialog(wm.getShell());
+		if (ddlg.open( BookmarkEditor )) {
+			updateBookmark();
+		}
+	}
+
+
 
 	// Bookmarkの追加の目的の Drop を行う
 	//

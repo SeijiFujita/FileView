@@ -190,14 +190,17 @@ class MainForm
 		// menu.setImage(MenuIcon);
 		
 		void onSelection_menu(SelectionEvent e) {
-			auto ddlg = new SettingDialog(shell);
-			if (ddlg.open()) {
-				bookmark.updateBookmark();
-			}
+			openSettingDialog();
 		}
 		menu.addSelectionListener(
 			dgSelectionListener(SelectionListener.SELECTION, &onSelection_menu)
 		);
+	}
+	void openSettingDialog() {
+		auto ddlg = new SettingDialog(shell);
+		if (ddlg.open()) {
+			bookmark.updateBookmark();
+		}
 	}
 }
 //-----------------------------------------------------------------------------

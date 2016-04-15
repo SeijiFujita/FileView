@@ -22,14 +22,18 @@ class SettingDialog : Dialog
 private:
 	Shell shell;
 	bool  dialogResult;
+	CTabFolder tabFolder;
+	Text bookmarkText;
 
 public:
 	this(Shell parent) {
 		super(parent, checkStyle(parent, SWT.APPLICATION_MODAL));
 	}
-	bool open() {
+	bool open(int tabSelect = 0) {
 		
 		createContents();
+		
+		tabFolder.setSelection(tabSelect);
 		
 		setCenterWindow();
 		
@@ -72,7 +76,7 @@ public:
 		
 		//
 		Composite container = createComposit(1, GridData.FILL_BOTH);
-		CTabFolder tabFolder = new CTabFolder(container, SWT.BORDER);
+		tabFolder = new CTabFolder(container, SWT.BORDER);
 		tabFolder.setLayoutData(new GridData(GridData.FILL_BOTH));
 		
 		setGeneralTab(tabFolder);
@@ -170,7 +174,6 @@ public:
 		tabItem.setControl(container);
 	}
 	
-	Text bookmarkText;
 	
 	void loadBookmarkData() {
 		string[] bd;
