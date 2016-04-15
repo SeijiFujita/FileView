@@ -75,35 +75,45 @@ public:
 		CTabFolder tabFolder = new CTabFolder(container, SWT.BORDER);
 		tabFolder.setLayoutData(new GridData(GridData.FILL_BOTH));
 		
+		setGeneralTab(tabFolder);
+		setTreeviewTab(tabFolder);
+		setFileTableTab(tabFolder);
 		setBookmarkTab(tabFolder);
-		
-		// 1つめのタブアイテムを作成
-		CTabItem tabItem1 = new CTabItem(tabFolder, SWT.NONE);
-		tabItem1.setText("Tab 1");
-		
-		Label label1 = new Label(tabFolder,SWT.NONE);
-		label1.setText("Label 1");
-		tabItem1.setControl(label1);
-		
-		// 2つめのタブアイテムを作成
-		CTabItem tabItem2 = new CTabItem(tabFolder,SWT.NONE);
-		tabItem2.setText("Tab 2");
-		
-		Label label2 = new Label(tabFolder,SWT.NONE);
-		label2.setText("Label2");
-		tabItem2.setControl(label2);
-
-		// 3つめのタブアイテムを作成
-		CTabItem tabItem3 = new CTabItem(tabFolder,SWT.NONE);
-		tabItem3.setText("Tab 3");
-		
-		Label label3 = new Label(tabFolder,SWT.NONE);
-		label3.setText("Label 3");
-		tabItem3.setControl(label3);
-		
+		setAboutTab(tabFolder);
+		//
 		createBottmWidget();
 	}
-	
+	void setGeneralTab(CTabFolder tabFolder) {
+		CTabItem tabItem = new CTabItem(tabFolder, SWT.NONE);
+		tabItem.setText("General");
+		//
+		Composite container = createComposit(tabFolder, 1, GridData.FILL_BOTH);
+		//
+		createLabel(container, "General:");
+		//
+		tabItem.setControl(container);
+	}
+	void setTreeviewTab(CTabFolder tabFolder) {
+		CTabItem tabItem = new CTabItem(tabFolder, SWT.NONE);
+		tabItem.setText("Treeview");
+		//
+		Composite container = createComposit(tabFolder, 1, GridData.FILL_BOTH);
+		//
+		createLabel(container, "Treeview:");
+		//
+		tabItem.setControl(container);
+	}
+	void setFileTableTab(CTabFolder tabFolder) {
+		CTabItem tabItem = new CTabItem(tabFolder, SWT.NONE);
+		tabItem.setText("FileTable");
+		//
+		Composite container = createComposit(tabFolder, 1, GridData.FILL_BOTH);
+		//
+		createLabel(container, "FileTable:");
+		//
+		tabItem.setControl(container);
+	}
+
 	Composite createComposit(Composite parent, int col, int gdata) {
 		// container Composite
 		Composite container = new Composite(parent, SWT.NONE);
@@ -117,6 +127,34 @@ public:
 		container.setLayoutData(new GridData(gdata));
 		return container;
 	}
+
+	void setAboutTab(CTabFolder tabFolder) {
+		CTabItem tabItem = new CTabItem(tabFolder, SWT.NONE);
+		tabItem.setText("About");
+		//
+		Composite container = createComposit(tabFolder, 1, GridData.FILL_BOTH);
+		//
+		createLabel(container, "
+
+ FileView for Windows
+ version 0.1a
+ 
+ 
+ 
+ URL:
+ * https://github.com/SeijiFujita/FileView
+ 
+ LICENCE:
+ * Copyright Seiji Fujita 2016.
+ * Distributed under the Boost Software License, Version 1.0.
+ * http://www.boost.org/LICENSE_1_0.txt
+ 
+"
+		);
+		//
+		tabItem.setControl(container);
+	}
+	
 	
 	void setBookmarkTab(CTabFolder tabFolder) {
 		CTabItem tabItem = new CTabItem(tabFolder, SWT.NONE);
@@ -124,8 +162,7 @@ public:
 		//
 		Composite container = createComposit(tabFolder, 1, GridData.FILL_BOTH);
 		//
-		Label label = new Label(container, SWT.NONE);
-		label.setText("BookmarkEdito:");
+		createLabel(container, "BookmarkEditor:");
 		//
 		createText(container);
 		loadBookmarkData();
