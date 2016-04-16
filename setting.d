@@ -184,10 +184,12 @@ public:
 		}
 	}
 	void saveBookmarkData() {
-		import std.array;
+//		import std.array;
+		import std.string;
 		string tm = bookmarkText.getText();
 		if (tm.length > 0) {
-			string[] bm = split(tm, bookmarkText.getLineDelimiter());
+//			string[] bm = split(tm, bookmarkText.getLineDelimiter());
+			string[] bm = splitLines(tm);
 			if (bm.length > 0) {
 				string[] bd;
 				foreach (v ; bm) {
