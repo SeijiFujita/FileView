@@ -26,7 +26,7 @@ class Bookmark
 	enum  bookmarkTopText = "Bookmark";
 	Tree	bookmarkTree;
 	Config	bookmarkConf;
-	void delegate(string) updateFolder;
+	void delegate(string path = null) updateFolder;
 	void delegate(string) reloadFileTable;
 	
 	/*

@@ -49,10 +49,12 @@ class MainForm
 		setStartupPath();
 		createComponents();
 		
-		tfolder.updateFolder  = &setUpdateFolder;
-		bookmark.updateFolder = &setUpdateFolder;
+		tfolder.updateFolder  = &updateFolder;
 		tfolder.reloadFileTable  = &tfile.reloadFileTable;
+		
+		bookmark.updateFolder = &updateFolder;
 		bookmark.reloadFileTable = &tfile.reloadFileTable;
+		
 		tfile.updateFolder    = &updateFolder;
 		
 		wm.run();
@@ -102,11 +104,10 @@ class MainForm
 		}
 		shell.setText("FileView -" ~ DirectoryPath);
 	}
-	void setUpdateFolder(string path) {
-		pathEdit.setText(path);
-		updateFolder();
-	}
-	void updateFolder() {
+	void updateFolder(string path = null) {
+		if (path != null) {
+			pathEdit.setText(path);
+		}
 		setDirectoryPath(pathEdit.getText());
 		tfolder.reloadFolder(DirectoryPath);
 		tfile.reloadFileTable(DirectoryPath);

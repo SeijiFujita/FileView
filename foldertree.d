@@ -23,7 +23,7 @@ import dlsbuffer;
 class FolderTree
 {
 	Tree  folderTree;
-	void delegate(string) updateFolder;
+	void delegate(string path = null) updateFolder;
 	void delegate(string) reloadFileTable;
 	
 	void initUI(Composite parent, string path) {

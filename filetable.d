@@ -21,7 +21,7 @@ import std.string;
 
 import utils;
 import dlsbuffer;
-
+import main;
 
 class FileTable
 {
@@ -37,7 +37,7 @@ private:
 	Color tableItemClipboardCutColor;
 	
 public:
-	void delegate() updateFolder;
+	void delegate(string path = null) updateFolder;
 
 	this() {
 		tableItemBackgroundColor = wm.getColor(230, 230, 230);
@@ -58,7 +58,7 @@ public:
 				int index = fileTable.getSelectionIndex();
 				int count = fileTable.getSelectionCount();
 				if (index >= 0 && count == 1) {
-					extentionOpen();
+					selectFunction();
 				}
 			}
 		});
@@ -99,6 +99,18 @@ public:
 		return true;
 	}
 */	
+	void selectFunction() {
+		int index = fileTable.getSelectionIndex();
+		auto item = cast(fileTableItem) fileTable.getItem(index);
+		if (index >= 0 && item !is null) {
+			string path = item.getfullPath();
+			if (path.isDir()) {
+				updateFolder(path);
+			} else {
+				extentionOpen();
+			}
+		}
+	}
 	void fileTableEditor() {
 		enum EditCOLUMN = 0;
 		enum MAX_PATH_LEN = 260; // for Windows SPEC.
