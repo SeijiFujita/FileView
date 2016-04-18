@@ -289,7 +289,7 @@ public:
 		createHorizotalLine(shell);
 		// ok, cancel bottom
 		Composite bottom = createRightAlignmentComposite();
-		Button okBtn = createButton(bottom, SWT.PUSH, "OK", BUTTON_WIDTH);
+		Button okBtn = createButton(bottom, SWT.PUSH, "OK");
 		void onSelection_okBtn(SelectionEvent e) {
 			dialogResult = true;
 			
@@ -301,7 +301,7 @@ public:
 			dgSelectionListener(SelectionListener.SELECTION, &onSelection_okBtn)
 		);
 		
-		Button cancelBtn = createButton(bottom, SWT.PUSH, "キャンセル", BUTTON_WIDTH);
+		Button cancelBtn = createButton(bottom, SWT.PUSH, "キャンセル");
 		void onSelection_canselBtn(SelectionEvent e) {
 			dialogResult = false;
 			shell.close();
@@ -310,34 +310,34 @@ public:
 			dgSelectionListener(SelectionListener.SELECTION, &onSelection_canselBtn)
 		);
 	}
-
+	
+	Label createHorizotalLine(Composite c) {
+		Label line = new Label(c, SWT.SEPARATOR | SWT.HORIZONTAL);
+		GridData data = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
+		line.setLayoutData(data);
+		return line;
+	}
+	
 	enum BUTTON_WIDTH = 70;
 	enum HORIZONTAL_SPACING = 3;
 	enum MARGIN_WIDTH = 0;
 	enum MARGIN_HEIGHT = 2;
-    Label createHorizotalLine(Composite c)
-    {
-        Label line = new Label(c, SWT.SEPARATOR | SWT.HORIZONTAL);
-        GridData data = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
-        line.setLayoutData(data);
-        return line;
-    }
+	Composite createRightAlignmentComposite() {
+		Composite c = new Composite(shell, SWT.NONE);
+		GridLayout layout = new GridLayout(2, false);
+		layout.horizontalSpacing = HORIZONTAL_SPACING;
+		layout.marginWidth = MARGIN_WIDTH;
+		layout.marginHeight = MARGIN_HEIGHT;
+		c.setLayout(layout);
+		GridData data = new GridData(GridData.HORIZONTAL_ALIGN_END);
+		c.setLayoutData(data);
+		return c;
+	}
 	
-    Composite createRightAlignmentComposite()
-    {
-        Composite c = new Composite(shell, SWT.NONE);
-        GridLayout layout = new GridLayout(2, false);
-        layout.horizontalSpacing = HORIZONTAL_SPACING;
-        layout.marginWidth = MARGIN_WIDTH;
-        layout.marginHeight = MARGIN_HEIGHT;
-        c.setLayout(layout);
-        GridData data = new GridData(GridData.HORIZONTAL_ALIGN_END);
-        c.setLayoutData(data);
-        return c;
-    }
-	
-	Button createButton(Composite c, int style, string name, int minWidth)
-	{
+	Button createButton(Composite c, int style, string name, int minWidth = 0) {
+		if (minWidth == 0) {
+			minWidth = BUTTON_WIDTH;
+		}
 		Button b = new Button(c, style);
 		b.setText(name);
 		

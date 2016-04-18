@@ -54,6 +54,7 @@ class Bookmark
 	void initUI(Composite parent) {
 		bookmarkTree = new Tree(parent, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.SINGLE | SWT.VIRTUAL);
 		bookmarkTree.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
+		SetTreeViewStyle(bookmarkTree.handle);
 		setPopup(bookmarkTree);
 		setDrop(bookmarkTree);
 		updateBookmark();
