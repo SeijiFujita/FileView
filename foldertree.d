@@ -1,6 +1,5 @@
 // Written in the D programming language.
 /*
-/*
  * dmd 2.070.0 - 2.071.0
  *
  * Copyright Seiji Fujita 2016.

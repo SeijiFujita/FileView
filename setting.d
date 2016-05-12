@@ -1,6 +1,5 @@
 // Written in the D programming language.
 /*
-/*
  * dmd 2.070.0 - 2.071.0
  *
  * Copyright Seiji Fujita 2016.
@@ -71,7 +70,7 @@ public:
 	void createContents() {
 		shell = new Shell(getParent(), getStyle() | SWT.DIALOG_TRIM | SWT.RESIZE);
 		shell.setSize(400, 500);
-		shell.setText("Select Directory");
+		shell.setText("Setting");
 		shell.setLayout(new GridLayout(1, false));
 		
 		//
