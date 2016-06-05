@@ -157,8 +157,8 @@ class MainForm
 	//----------------------
 	void pathEditBox() {
 		Composite container = createComposit(3, GridData.FILL_HORIZONTAL);
-		//
-		Button updir = wm.createButton(container, "←", SWT.PUSH,  35);
+		// go to root directory bottom
+		Button updir = wm.createButton(container, "↑", SWT.PUSH,  35);
 		updir.setToolTipText("Go to root direction");
 		// updir.setImage(LarrowIcon);
 		void onSelection_updir(SelectionEvent e) {
@@ -184,8 +184,9 @@ class MainForm
 			override void keyReleased(KeyEvent e) {
 			}
 	    });
-		//
-		Button menu = wm.createButton(container, "≡", SWT.PUSH, 35);
+		// setting buttom
+		// Button menu = wm.createButton(container, "≡", SWT.PUSH, 35);
+		Button menu = wm.createButton(container, "＝", SWT.PUSH, 35);
 		menu.setToolTipText("Menu dlalog");
 		// menu.setImage(MenuIcon);
 		
