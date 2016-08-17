@@ -283,7 +283,7 @@ void SetTreeViewStyle(HANDLE handle) {
     }
 	// TreeView_GetExtendedStyle(handle)
 	// delete TVS_EX_AUTOHSCROLL
-	int exStyle = OS.SendMessage(handle, OS.TVM_GETEXTENDEDSTYLE, 0, 0);
+	auto exStyle = OS.SendMessage(handle, OS.TVM_GETEXTENDEDSTYLE, 0, 0);
 	/*
 	if (exStyle & OS.TVS_EX_AUTOHSCROLL) {
     	exStyle &= ~OS.TVS_EX_AUTOHSCROLL;

@@ -4,7 +4,8 @@
 *.conf
 FileView01.conf.bakup
 *.png
-
+*.exp
+*.lib
 
 # Windows image file caches
 Thumbs.db

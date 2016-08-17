@@ -73,7 +73,6 @@ module 名はどうするか？
 
 module dlsbuffer;
 
-
 import std.string : format, lastIndexOf;
 import core.atomic;
 
@@ -127,8 +126,7 @@ Examples:
 void dlogWrite(string file = __FILE__, int line = __LINE__, T...)(T args)
 {
 	version (useDebugLog) {
-		dLogMemBuffer._outLogV(format("%s:%d:[%s]", file, line, getDateTimeStr()), args);
-		dLogMemBuffer._outLoglf("#### writeLog");
+		dLogMemBuffer._outLogV(format("%s:%d:[%s]", file, line, getDateTimeStr()), "#writeLog", args);
 		dLogMemBuffer.writeFile();
 	}
 }
@@ -251,7 +249,7 @@ public:
 			execPath = Runtime.args[0];
 		}
 		if (execPath.length) {
-			int n = lastIndexOf(execPath, ".");
+			auto n = lastIndexOf(execPath, ".");
 			if ( n > 0 ) {
 				LogFilename = execPath[0 .. n]  ~ "." ~ ext;
 			} else {
@@ -312,7 +310,7 @@ public:
 		           ctime.day);
 	}
 //
-	void _dumpLog(void *Buff, size_t byteSize) {
+	void _dumpLog(void *Buff, uint byteSize) {
 		import std.ascii : isPrintable;
 		enum PrintLen = 16;
 		ubyte[PrintLen] dumpBuff;

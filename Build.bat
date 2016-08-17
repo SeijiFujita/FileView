@@ -1,11 +1,12 @@
 @echo off
 rem path=C:\D\dmd.2.069.2\windows\bin;C:\D\bin;
 rem path=C:\D\dmd.2.070.2\windows\bin;C:\D\bin;
-path=C:\D\dmd.2.071.0\windows\bin;C:\D\bin;
+path=C:\D\dmd.2.071.1\windows\bin;C:\D\bin;
 
 @echo on
 
-dmd @dwtlib_normal.txt
+rem dmd @dwtlib_normal.txt
+dmd @dwt64lib_normal.txt
 
 
 @if ERRORLEVEL 1 goto :eof

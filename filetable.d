@@ -318,13 +318,13 @@ public:
 		Menu menu = new Menu(parent);
 		parent.setMenu(menu);
 		
-		addPopupMenu(menu, "Hidemaru", &execHidemaru);
-		addPopupMenu(menu, "FileView", &execFileView);
-		addPopupMenu(menu, "FindFile", &execFileFile);
-		addPopupMenu(menu, "Msys", &execMsys);
-		addPopupMenu(menu, "CMD", &execCmd);
 		addPopupMenu(menu, "extentionOpen", &extentionOpen);
 		addMenuSeparator(menu);
+		addPopupMenu(menu, "Hidemaru", &execHidemaru);
+		addPopupMenu(menu, "FileView", &execFileView);
+		addPopupMenu(menu, "FindFile", &execFileFind);
+		addPopupMenu(menu, "Msys", &execMsys);
+		addPopupMenu(menu, "CMD", &execCmd);
 		//--------------------
 		auto itemCut    = addPopupMenu(menu, "Cut", &execCut);
 		auto itemCopy   = addPopupMenu(menu, "Copy", &execCopy);
@@ -370,6 +370,7 @@ public:
 			}
 		});
 	}
+	
 	MenuItem addPopupMenu(Menu menu, string text, void delegate() dg, int accelerator = 0, int style = SWT.NONE) {
 		MenuItem item = new MenuItem(menu, style);
 		item.setText(text);
@@ -383,6 +384,7 @@ public:
 		});
 		return item;
 	}
+    
     void addMenuSeparator(Menu menu) {
 		new MenuItem(menu, SWT.SEPARATOR);
 	}
@@ -434,8 +436,8 @@ public:
 		string param = " " ~ tablePath;
 		CreateProcess(prog ~ param);
 	}
-	void execFileFile() {
-		string prog = "C:\\D\\bin\\findFile.exe";
+	void execFileFind() {
+		string prog = "C:\\D\\bin\\fileFind.exe";
 		string param = " " ~ tablePath;
 		CreateProcess(prog ~ param);
 	}
