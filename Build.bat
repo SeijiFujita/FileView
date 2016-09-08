@@ -13,7 +13,7 @@ dmd @dwt64lib_normal.txt
 del *.obj
 
 rem FileView01 C:\D\rakugaki
-FileView01
+FileView64
 
 echo done...
 goto :eof

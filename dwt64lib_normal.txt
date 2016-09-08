@@ -2,7 +2,7 @@
 #-wi -g
 -wi -m64
 main.d foldertree.d filetable.d bookmark.d utils.d conf.d setting.d dlsbuffer.d
--ofFileView01.exe
+-ofFileView64.exe
 #
 -IC:\D\rakugaki\dwtdev\dwt_local\base\src
 -IC:\D\rakugaki\dwtdev\dwt_local\org.eclipse.swt.win32.win32.x86\src
