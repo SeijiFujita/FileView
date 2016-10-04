@@ -1,7 +1,7 @@
 @echo off
 rem path=C:\D\dmd.2.069.2\windows\bin;C:\D\bin;
 rem path=C:\D\dmd.2.070.2\windows\bin;C:\D\bin;
-path=C:\D\dmd.2.071.1\windows\bin;C:\D\bin;
+path=C:\D\dmd.2.071.2\windows\bin;C:\D\bin;
 
 @echo on
 

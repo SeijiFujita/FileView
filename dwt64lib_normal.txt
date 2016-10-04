@@ -19,6 +19,6 @@ resource\resource.res
 -L/ENTRY:mainCRTStartup
 ##64bit
 C:\D\rakugaki\dwtdev\dwt_local\lib\dwt_base_normal64.lib
-C:\D\rakugaki\dwtdev\dwt_local\lib\dwt_w32x86_normal64.lib
+C:\D\rakugaki\dwtdev\dwt_local\lib\dwt_w64x86_normal64.lib
 
 
