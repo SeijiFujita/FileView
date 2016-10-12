@@ -3,6 +3,7 @@
 *.debug_log.txt
 *.conf
 FileView01.conf.bakup
+FileView64.conf.bakup
 *.png
 *.exp
 *.lib

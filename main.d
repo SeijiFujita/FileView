@@ -23,6 +23,12 @@ import conf;
 import setting;
 import dlsbuffer;
 
+version(Win64) {
+	enum APP_TITLE = "FileView64 - ";
+} else {
+	enum APP_TITLE = "FileView - ";
+}
+
 class MainForm
 {
 	Shell		shell;
@@ -34,7 +40,7 @@ class MainForm
 	
 	this() {
 		// utils.wm is grobal
-		wm = new WindowManager("FileView");
+		wm = new WindowManager(APP_TITLE);
 		cf = new Config();
 		
 		shell = wm.getShell();
@@ -101,7 +107,7 @@ class MainForm
 		else {
 			DirectoryPath = getcwd();
 		}
-		shell.setText("FileView -" ~ DirectoryPath);
+		shell.setText(APP_TITLE ~ DirectoryPath);
 	}
 	void updateFolder(string path = null) {
 		if (path != null) {
