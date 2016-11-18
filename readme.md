@@ -4,9 +4,9 @@ FileView
 File viewer for windows.
 
 ### Development environment / Requirements
-- OS:  Windows 7
-- Compiler: used dmd.2.070.2, dmd.2.071.0
-- dwt
+- OS:  Windows 7/10
+- Compiler: dmd.2.071
+- use dwt
 
 ### Building
 
