@@ -5,13 +5,16 @@ rem path=C:\D\dmd.2.071.2\windows\bin;C:\D\bin;
 
 @echo on
 
+dmd --version
 rem dmd @dwtlib_normal.txt
-dmd @dwt64lib_normal.txt
+rem dmd @dwt64lib_normal.txt
+dmd @buildcf.txt
+
 @if ERRORLEVEL 1 goto :eof
-del *.obj
 
 rem FileView01 C:\D\rakugaki
-FileView64
+rem FileView64
 
 echo done...
 goto :eof
+-----------------------------------

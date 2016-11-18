@@ -665,6 +665,7 @@ public:
 				dlog("DND.DROP_MOVE: ", DND.DROP_MOVE);
 				dlog("DND.DROP_DEFAULT: ", DND.DROP_DEFAULT);
 version (none) {
+// ファイルを消すのはやっぱ問題あるよｗ
 				if (event.detail == DND.DROP_MOVE) {
 					dlog("delete");
 					// delete move files;

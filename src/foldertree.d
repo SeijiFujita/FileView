@@ -170,7 +170,54 @@ class FolderTree
 			}
 		}
 	}
-	
+	bool self_DragFlag;
+	/// 
+	void setDrag(Tree tt) {
+		// windows explorer の仕様
+		// drag only    : DROP_DEFAULT application default の動作は移動(DND.DROP_MOVE)
+		// drag + SHIFT : DND.DROP_MOVE
+		// drag + CTRL  : DND.DROP_COPY
+		// drag + CTRL + SHIFT : DND.DROP_LINK;
+		
+		int operations = DND.DROP_COPY;
+		//
+		DragSource source = new DragSource(tt, operations);
+		source.setTransfer([FileTransfer.getInstance()]);
+		source.addDragListener(new class DragSourceListener {
+			// event.doit = true でドラックできる事をOLEに知らせる
+			override void dragStart(DragSourceEvent event) {
+				dlog("dragStart:event.detail: ", event.detail);
+				self_DragFlag = true;
+				event.doit = (tt.getSelectionCount() != 0);
+			}
+			// ドラックするデータを作成し evet.data にセット
+			override void dragSetData(DragSourceEvent event) {
+				dlog("dragSetData: event.detail: ", event.detail);
+				auto items = cast(folderTreeItem[]) tt.getSelection();
+				string[] buff;
+				foreach (v ; items) {
+					buff ~= v.getfullPath();
+				}
+				dlog("buff ", buff);
+				event.data = new ArrayWrapperString2(buff);
+				event.detail = DND.DROP_COPY;
+			}
+			// ドロップ後(貼り付け後)の終了処理
+			// 移動を行った後はソースを削除しないと移動にならない
+			override void dragFinished(DragSourceEvent event) {
+				dlog("dragFinished event: ", event);
+				dlog("event.detail: ", event.detail);
+				dlog("DND.DROP_COPY: ", DND.DROP_COPY);
+				dlog("DND.DROP_MOVE: ", DND.DROP_MOVE);
+				dlog("DND.DROP_DEFAULT: ", DND.DROP_DEFAULT);
+				self_DragFlag = false;
+				dlog("dragFinished:end");
+			}
+		});
+	}
+
+version(none) {
+	// Text Drag
 	void setDrag(Tree tt) {
 		//
 		int operations = DND.DROP_COPY;
@@ -196,7 +243,7 @@ class FolderTree
 			}
 		});
 	}
-
+} // version
 
 }
 

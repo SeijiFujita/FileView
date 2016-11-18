@@ -102,6 +102,7 @@ class Bookmark
 			}
 		}
 	}
+	
 	class bookmarkItem : TreeItem
 	{
 		string fullPath;
@@ -176,42 +177,49 @@ class Bookmark
 			updateBookmark();
 		}
 	}
-
-
-
+	
 	// Bookmarkの追加の目的の Drop を行う
 	//
 	void setDrop(Tree tt) {
 		int operations = DND.DROP_COPY;
 		DropTarget target = new DropTarget(tt, operations);
-		target.setTransfer([TextTransfer.getInstance()]);
+		target.setTransfer([TextTransfer.getInstance(), FileTransfer.getInstance()]);
 		target.addDropListener(new class DropTargetAdapter {
-			// ドラッグ中のマウスカーソルが入ってきた時にdragEnterが呼ばれます
-			// ドロップ可能な場合はevent.detail = DND.DROP_COPY で応答を行います
 			override void dragEnter(DropTargetEvent event) {
-				dlog("dragEnter");
-				dlog("DropTargetEvent event: ", event);
+				// ドラッグ中のカーソルが入ってきた時の処理
+				// 修飾キーを押さない場合のドラッグ＆ドロップはコピー
+				//if (event.detail == DND.DROP_DEFAULT)
+				//	event.detail = DND.DROP_COPY;
+				dragOperationChanged(event);
+			}
+			override void dragOperationChanged(DropTargetEvent event) {
+				// ドラッグ中に修飾キーが押されて処理が変更された時の処理
+				// 修飾キーを押さない場合のドラッグ＆ドロップはコピー
+				event.detail = DND.DROP_NONE;
 				if (TextTransfer.getInstance().isSupportedType(event.currentDataType)) {
 					event.detail = DND.DROP_COPY;
-				} else {
-					event.detail = DND.DROP_NONE;
+				} else if (FileTransfer.getInstance().isSupportedType(event.currentDataType)) {
+					event.detail = DND.DROP_COPY;
 				}
-				dlog("DropTargetEvent event: ", event);
-			}
-			// ドラッグ中に修飾キーが押されて処理が変更された時の処理
-			override void dragOperationChanged(DropTargetEvent event) {
-				dlog("dragOperationChanged: event: ", event);
 			}
 			override void drop(DropTargetEvent event) {
-				// event.data の内容を確認してドロップに対応した処理を行う
-				dlog("drop: DropTargetEvent event: ", event);
-				if (event.data !is null) {
+				// event.data の内容を確認してカーソル位置にテキストをドロップ
+				if (event.data is null) {
+					event.detail = DND.DROP_NONE;
+				} else if (TextTransfer.getInstance().isSupportedType(event.currentDataType)) {
 					string st = stringcast(cast(Object)event.data);
+					dlog("drop:TextTransfer: ", st);
 					addBookmarkData(st);
+					updateBookmark();
+				} else if (FileTransfer.getInstance().isSupportedType(event.currentDataType)) {
+					string[] sar = stringArrayFromObject(event.data);
+					foreach(v ; sar) {
+						dlog("drop:TextTransfer: ", v);
+						addBookmarkData(v);
+					}
 					updateBookmark();
 				}
 			}
 		});
 	}
-
 }
