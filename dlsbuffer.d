@@ -1,19 +1,12 @@
 // Written in the D programming language.
-/*
- * dmd 2.070.0 - 2.071.0
- *
- * Copyright Seiji Fujita 2016.
- * Distributed under the Boost Software License, Version 1.0.
- * http://www.boost.org/LICENSE_1_0.txt
- */
-
 /**
 debuglog.d
 output debuglog
 
 
-void dlog(...);
-void dumplog(void *, uint, string);
+void dlog(Anyarg...);
+void dlogCond(Anyarg...)
+void dlogDump(void *, uint, string);
 
 Source: dlog.d
 License: Distributed under the Boost Software License, Version 1.0.
@@ -21,10 +14,9 @@ Authors: Seiji Fujita
 
 Compiler: dmd.2.070.0 / windows
 
-
 実装済み
 ------
-.dlog は指定された引数をログファイルに出力します。
+.引数をログファイルに出力します。
 	dlog(anyValue...);
 
 .dumplog は16進ダンプをログファイルに出力します。
@@ -73,64 +65,91 @@ module 名はどうするか？
 
 module dlsbuffer;
 
+
 import std.string : format, lastIndexOf;
 import core.atomic;
 
-//
+// use DebugLog
 version = useDebugLog;		/// enable to the debug log
 // version = useFilenameAddDATE;	///  Put the date in the filename of the debug log.
+// Module Test
+// version = Module_TEST; 
 
-/****
-Examples:
-----
-foo() {
- dLog(1, 2.0, '3', "456");
 
- int count = 0;
- ...
- dLog("count = ", count);
-}
-----
-*/
-void dlog(string file = __FILE__, int line = __LINE__, T...)(T args)
+/// void dlog(string file = __FILE__, int line = __LINE__, T...)(T args)
+/// void dlog(Anyarg...)
+void dlog(string file = __FILE__, int line = __LINE__, A...)(A args)
 {
 	version (useDebugLog) {
-		dLogMemBuffer._outLogV(format("%s:%d:[%s]", file, line, getDateTimeStr()), args);
+		dLogMemBuffer._outLogV(file, ":", line,":[", getDateTimeStr(), "]", args);
 		// add getpid
 		// dLogMemBuffer._outlogV(format("%s:%d:[%s:%d]", file, line, getDateTimeStr(), getpid()), args);
+		// dLogMemBuffer._outLogV(format("%s:%d:[%s]", file, line, getDateTimeStr()), args);
 	}
 }
+unittest {
+	// void dlog(Anyarg...)
+	int num = 10;
+	dlog("num: ", num);
+	dlog("num > 0: ", num > 0);
+}
 
-/****
-void dlogDump(cast(void *)dumpAddress, uint dumpSize, string Comment);
 
-Examples:
-int[10] foo = [0, 1, 2, 3, 4, 5];
-dlogDump(cast(void*)&foo, foo.length, "comment");
-*/
-void dlogDump(string file = __FILE__, int line = __LINE__, T1, T2, T3)(T1 t1, T2 t2, T3 t3)
-if (is(T1 == void*) && is(T2 == size_t) && is(T3 == string))
+/// void dlogTrue(string file = __FILE__, int line = __LINE__, bool cond, T...)(T args)
+/// void dlogCond(bool cond, Anyarg...)
+void dlogCond(string file = __FILE__, int line = __LINE__, C, A...)(C cond, A args)
+	if (is (C == bool))
 {
 	version (useDebugLog) {
-		dLogMemBuffer._outLoglf(format("%s:%d:[%s] %s, %d byte", file, line, getDateTimeStr(), t3, t2));
-		dLogMemBuffer._dumpLog(t1, t2);
+		if (cond) {
+			dLogMemBuffer._outLogV(file, ":", line,":[", getDateTimeStr(), "]", args);
+			// add getpid
+			// dLogMemBuffer._outlogV(format("%s:%d:[%s:%d]", file, line, getDateTimeStr(), getpid()), args);
+			// dLogMemBuffer._outLogV(format("%s:%d:[%s]", file, line, getDateTimeStr()), args);
+		}
 	}
 }
+unittest {
+	// void dlog(bool cond, Anyarg...)
+	int num = 10;
+	dlog(true, "num: ", num);
+	dlog(false, "num > 0: ", num > 0);
+	dlog(num > 0, "num > 0");
+}
 
-/****
-void dlogWrite(comment, string Comment);
+/// void dlogDump(string file = __FILE__, int line = __LINE__, V, N, S)(V v, N n, S s)
+/// void dlogDump(cast(void *)dumpAddress, size_t dumpSize, string Comment);
+void dlogDump(string file = __FILE__, int line = __LINE__, V, N, S)(V v, N n, S s)
+if (is(V == void*) && is(N == size_t))
+{
+	version (useDebugLog) {
+		   dLogMemBuffer._outLogV(file, ":", line, ":[", getDateTimeStr(), "]dumpSize ", n, " byte, ", s);
+		// dLogMemBuffer._outLoglf(format("%s:%d:[%s]dumpSize %d byte, %s", file, line, getDateTimeStr(), n, s));
+		dLogMemBuffer._dumpLog(v, n);
+	}
+}
+unittest {
+	int[10] foo = [0, 1, 2, 3, 4, 5];
+	dlogDump(cast(void*)&foo, foo.length, "comment");
+}
 
-Examples:
-	dlogWrite();
-*/
+/// void dlogWrite(string file = __FILE__, int line = __LINE__, T...)(T args)
+/// void dlogWrite(Anyarg...)
 void dlogWrite(string file = __FILE__, int line = __LINE__, T...)(T args)
 {
 	version (useDebugLog) {
-		dLogMemBuffer._outLogV(format("%s:%d:[%s]", file, line, getDateTimeStr()), "#writeLog", args);
+		dLogMemBuffer._outLogV(file, ":", line,":[", getDateTimeStr(), "]", args);
+		dLogMemBuffer._outLoglf("#### writeLog ####");
 		dLogMemBuffer.writeFile();
 	}
 }
+unittest {
+	// write to logfile.
+	dlogWrite();
+}
 
+/// string getDateTimeStr()
+/// return timeString
 string getDateTimeStr()
 {
 	import std.datetime;
@@ -164,10 +183,13 @@ string getDateTimeStr()
 }
 
 
-//
-enum string dlog_VERSION = "debuglog.0.2";
+/// dlog version
+enum string dlog_VERSION = "debuglog.0.5";
+/// bufferling size
 enum uint LogBufferSize = 1024;
+/// thread count
 shared private int threadCounter;
+/// 
 __gshared MemBuffer dLogMemBuffer;
 
 version (useDebugLog)
@@ -189,6 +211,7 @@ version (useDebugLog)
 	}
 } // version (useDebugLog)
 
+/// 
 class MemBuffer {
 private:
 	this() {}
@@ -218,7 +241,7 @@ public:
 		}
 	}
 	void writeFile() {
-		import std.file:append;
+		import std.file: append;
 		if (_count) {
 			foreach (v ; _array) {
 				append(LogFilename, v);
@@ -230,6 +253,34 @@ public:
 		return _count;
 	}
 //------------------------------------------------
+version (Windows) {
+	/// string getModuleFileName()
+	/// Returns the full filePath location of .exe
+	string getModuleFileName() {
+		import core.sys.windows.windows: TCHAR, MAX_PATH, GetModuleFileName;
+		import std.utf: toUTF8;
+		// import std.conv: to;
+		TCHAR[] buffer = new TCHAR[ MAX_PATH ];
+		uint len = GetModuleFileName(cast(void*)null, buffer.ptr, cast(uint)buffer.length);
+   		 if (len <= 0) {
+			throw new Exception(format("==== Exception! ====\n%s:%d GetModuleFileName", __FILE__, __LINE__));
+			// throw new Exception("==== Exception! ====\n"~ __FILE__ ~":" ~ to!string(__LINE__) ~ " GetModuleFileName");
+		}
+    	buffer.length = len;
+		return toUTF8(buffer);
+	}
+} else { // linux, mac, etc...
+	string getModuleFileName() {
+		string result;
+		import core.runtime: Runtime;
+		if (Runtime.args.length && Runtime.args[0].length) {
+			result = Runtime.args[0];
+		} else {
+			throw new Exception(format("==== Exception! ====\n%s:%d GetModuleFileName", __FILE__, __LINE__));
+		}
+		return result;
+	}
+}
 	/**
 	void setDebugLog(bool flag = true)
 	
@@ -243,11 +294,7 @@ public:
 			ext = "debug_log.txt";
 		}
 		
-		string execPath;
-		import core.runtime: Runtime;
-		if (Runtime.args.length) {
-			execPath = Runtime.args[0];
-		}
+		string execPath = getModuleFileName();
 		if (execPath.length) {
 			auto n = lastIndexOf(execPath, ".");
 			if ( n > 0 ) {
@@ -264,7 +311,8 @@ public:
 		
 		// dlog("#= ", dlog_VERSION, "/", LogFilename, " / ",  __VENDOR__, ":", __VERSION__);
 		
-		_outLogV(format("%s:%d:[%s]", __FILE__, __LINE__, getDateTimeStr()), 
+		_outLogV(
+			format("%s:%d:[%s]", __FILE__, __LINE__, getDateTimeStr()), 
 			"#= ", dlog_VERSION, "/", LogFilename, "/",  __VENDOR__, ":", __VERSION__
 			);
 	}
@@ -309,8 +357,9 @@ public:
 		           ctime.month,
 		           ctime.day);
 	}
-//
-	void _dumpLog(void *Buff, uint byteSize) {
+	
+	///
+	void _dumpLog(void *Buff, size_t byteSize) {
 		import std.ascii : isPrintable;
 		enum PrintLen = 16;
 		ubyte[PrintLen] dumpBuff;
@@ -344,7 +393,7 @@ public:
 		for (uint i; i < byteSize + PrintLen; i += PrintLen) {
 			endPrint = i + PrintLen;
 			if (byteSize < endPrint) {
-				uint end = byteSize - i;
+				auto end = byteSize - i;
 				dumpBuff = dumpBuff.init;
 				dumpBuff[0 .. end] = cast(ubyte[]) Buff[i .. byteSize];
 				printCount(i);
@@ -399,4 +448,56 @@ class MySingleton {
  }
 ***/
 
-//eof
+version(Module_TEST) {
+
+void test()
+{
+	int intn = 123456;
+	dlog("intn = ", intn);
+	dlog("intn <= 10 : ", intn <= 10);
+	dlog("TEST ", 1, " ", 0.2, " ", 3L, " ", true, " ", false);
+	dlog("--------------------");
+    
+    struct structS {
+        char[20] c;
+        int inti;
+        long longl;
+        double doubled;
+    }
+    structS ss;
+    ss.c[0] = 'a';
+    ss.c[1] = 'b';
+    ss.c[2] = 'c';
+    ss.inti = 1;
+    ss.longl = 2;
+    ss.doubled = 0.1;
+	
+	dlog("ss: ", ss);
+	dlog("--------------------");
+    dlogDump(cast(void *)&ss, ss.sizeof, "ss");
+	
+	string stringCode = "abc漢字def"c;
+    dlogDump(cast(void*)stringCode, stringCode.length, "utf8 string");
+    
+    wstring utf16Code = "abc漢字def"w;
+    dlogDump(cast(void*)utf16Code, utf16Code.length * wchar.sizeof, "utf16 string");
+    
+    dstring utf32Code = "abc漢字def"d;
+    dlogDump(cast(void*)utf32Code, utf32Code.length * dchar.sizeof, "utf32 string");
+}
+
+int main()
+{
+	try {
+		dlog("== START");
+		test();
+	}
+	catch(Exception e) {
+		dlog(e.msg);
+		//writeln(e.msg);
+	}
+	dlog("== END");
+	return 0;
+}
+
+} // version Moduel_TEST
