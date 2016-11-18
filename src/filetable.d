@@ -321,6 +321,7 @@ public:
 		addPopupMenu(menu, "extentionOpen", &extentionOpen);
 		addMenuSeparator(menu);
 		addPopupMenu(menu, "Hidemaru", &execHidemaru);
+		addPopupMenu(menu, "VSCode", &execVSCode);
 		addPopupMenu(menu, "FileView", &execFileView);
 		addPopupMenu(menu, "FindFile", &execFileFind);
 		addPopupMenu(menu, "Msys", &execMsys);
@@ -420,19 +421,29 @@ public:
 	void execHidemaru() {
 		fileTableItem[] items = cast(fileTableItem[]) fileTable.getSelection();
 		if (items.length) {
-			string hidemaru = "\"C:\\Program Files (x86)\\Hidemaru\\hidemaru.exe\"";
+			string prog = "\"C:\\Program Files (x86)\\Hidemaru\\hidemaru.exe\"";
 			string param;
 			foreach(v ; items) {
-				string s = " " ~ v.getfullPath();
-				param ~= s;
-				dlog("v.getfullPath(): ", s);
+				param ~= " " ~ v.getfullPath();
 			}
-			CreateProcess(hidemaru ~ param);
+			CreateProcess(prog ~ param);
+			reloadFileTable();
+		}
+	}
+	void execVSCode() {
+		fileTableItem[] items = cast(fileTableItem[]) fileTable.getSelection();
+		if (items.length) {
+			string prog = "\"C:\\Program Files (x86)\\Microsoft VS Code\\bin\\code.cmd\"";
+			string param;
+			foreach(v ; items) {
+				param ~= " " ~ v.getfullPath();
+			}
+			CreateProcess(prog ~ param);
 			reloadFileTable();
 		}
 	}
 	void execFileView() {
-		string prog = "C:\\D\\bin\\fileView01.exe";
+		string prog = "C:\\D\\bin\\fileView64.exe";
 		string param = " " ~ tablePath;
 		CreateProcess(prog ~ param);
 	}
@@ -590,7 +601,7 @@ public:
 		/* Use the character encoding for the default locale */
 		StringT buffer = StrToTCHARs(0, commandLine, true);
 		auto byteCount = buffer.length  * TCHAR.sizeof;
-		auto lpCommandLine = cast(TCHAR*)OS.HeapAlloc (hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
+		auto lpCommandLine = cast(TCHAR*)OS.HeapAlloc(hHeap, OS.HEAP_ZERO_MEMORY, byteCount);
 		OS.MoveMemory(lpCommandLine, buffer.ptr, byteCount);
 		STARTUPINFO lpStartupInfo;
 		lpStartupInfo.cb = STARTUPINFO.sizeof;

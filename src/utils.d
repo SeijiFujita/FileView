@@ -344,6 +344,7 @@ private:
 			display = new Display();
 			clipboard = new Clipboard(display);
 			display.systemFont = new Font(display, new FontData("Meiryo UI", 10, SWT.NORMAL));
+			// display.systemFont = new Font(display, new FontData("Noto Sans Japanese", 12, SWT.NORMAL));
 			
 		}
 		shell = new Shell(display);
