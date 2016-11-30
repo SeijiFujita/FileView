@@ -45,7 +45,7 @@ debuglogの名前案
  
  Debug Loupe
  
- debug log system
+ Debug Log System
  DLS
  
  
@@ -63,17 +63,23 @@ module 名はどうするか？
 
 ****/
 
-module dlsbuffer;
+module debuglog;
 
 
 import std.string : format, lastIndexOf;
 import core.atomic;
 
-// use DebugLog
-version = useDebugLog;		/// enable to the debug log
-// version = useFilenameAddDATE;	///  Put the date in the filename of the debug log.
+/// Enable to the debug log
+version = useDebugLog;
+
+///  Add a DATE to the log filename.
+//version = useFilenameAddDATE;
+
+/// Write directly to the file.
+//version = useDirectWrite;
+
 // Module Test
-// version = Module_TEST; 
+//version = Module_TEST; 
 
 
 /// void dlog(string file = __FILE__, int line = __LINE__, T...)(T args)
@@ -253,40 +259,19 @@ public:
 		return _count;
 	}
 //------------------------------------------------
-version (Windows) {
-	/// string getModuleFileName()
-	/// Returns the full filePath location of .exe
-	string getModuleFileName() {
-		import core.sys.windows.windows: TCHAR, MAX_PATH, GetModuleFileName;
-		import std.utf: toUTF8;
-		// import std.conv: to;
-		TCHAR[] buffer = new TCHAR[ MAX_PATH ];
-		uint len = GetModuleFileName(cast(void*)null, buffer.ptr, cast(uint)buffer.length);
-   		 if (len <= 0) {
-			throw new Exception(format("==== Exception! ====\n%s:%d GetModuleFileName", __FILE__, __LINE__));
-			// throw new Exception("==== Exception! ====\n"~ __FILE__ ~":" ~ to!string(__LINE__) ~ " GetModuleFileName");
-		}
-    	buffer.length = len;
-		return toUTF8(buffer);
+	void dlog_enable() {
+		LogFlag = true;
 	}
-} else { // linux, mac, etc...
-	string getModuleFileName() {
-		string result;
-		import core.runtime: Runtime;
-		if (Runtime.args.length && Runtime.args[0].length) {
-			result = Runtime.args[0];
-		} else {
-			throw new Exception(format("==== Exception! ====\n%s:%d GetModuleFileName", __FILE__, __LINE__));
-		}
-		return result;
+	void dlog_disable() {
+		LogFlag = false;
 	}
-}
 	/**
 	void setDebugLog(bool flag = true)
 	
 	param: flag
 	**/
 	void setDebugLog(bool flag = true) {
+		import std.file : thisExePath;
 		string ext;
 		version (useFilenameAddDATE) {
 			ext = "debug_log_" ~ getDateStr() ~ ".txt";
@@ -294,7 +279,7 @@ version (Windows) {
 			ext = "debug_log.txt";
 		}
 		
-		string execPath = getModuleFileName();
+		string execPath = thisExePath();
 		if (execPath.length) {
 			auto n = lastIndexOf(execPath, ".");
 			if ( n > 0 ) {
@@ -336,15 +321,21 @@ version (Windows) {
 		 _outLoglf(w.data);
 	}
 	
-	void _outLog(lazy string dg) {
+	void _outLog(lazy string s) {
 		if (LogFlag) {
-			add(dg());
+			add(s);
+			version (useDirectWrite) {
+				writeFile();
+			}
 		}
 	}
 
-	void _outLoglf(lazy string dg) {
+	void _outLoglf(lazy string s) {
 		if (LogFlag) {
-			add(dg() ~ "\n");
+			add(s ~ "\n");
+			version (useDirectWrite) {
+				writeFile();
+			}
 		}
 	}
 	
@@ -367,24 +358,32 @@ version (Windows) {
 		void printCount(uint n) {
 			_outLog(format("%06d: ", n));
 		}
-		void printBody() {
+		void printBody(int n) {
 			string s;
 			foreach (int i, ubyte v; dumpBuff) {
 				if (i == PrintLen / 2) {
 					s ~= " ";
 				}
-				s ~= format("%02X ", v);
+				if (i < n) {
+					s ~= format("%02X ", v);
+				} else {
+					s ~= "   ";
+				}
 			}
 			_outLog(s);
 		}
-		void printAscii() {
+		void printAscii(int n) {
 			string s;
 			char c;
-			foreach (ubyte v; dumpBuff) {
+			foreach (int i, ubyte v; dumpBuff) {
 				c = cast(char)v;
-				if (! isPrintable(c))
+				if (!isPrintable(c))
 					c = '.';
-				s ~= format("%c", c);
+				if (i < n) {
+					s ~= format("%c", c);
+				} else {
+					s ~= ".";
+				}
 			}
 			_outLoglf(s);
 		}
@@ -394,17 +393,19 @@ version (Windows) {
 			endPrint = i + PrintLen;
 			if (byteSize < endPrint) {
 				auto end = byteSize - i;
-				dumpBuff = dumpBuff.init;
-				dumpBuff[0 .. end] = cast(ubyte[]) Buff[i .. byteSize];
-				printCount(i);
-				printBody();
-				printAscii();
+				if (end != 0) {
+					dumpBuff = dumpBuff.init;
+					dumpBuff[0 .. end] = cast(ubyte[]) Buff[i .. byteSize];
+					printCount(i);
+					printBody(end);
+					printAscii(end);
+				}
 				break;
 			}
 			dumpBuff = cast(ubyte[]) Buff[i .. endPrint];
 			printCount(i);
-			printBody();
-			printAscii();
+			printBody(PrintLen);
+			printAscii(PrintLen);
 		}
 	}
 //------------------------------------------------
@@ -425,6 +426,7 @@ version (Windows) {
 	}
 } // MemBuffer
 /***
+http://wiki.dlang.org/Low-Lock_Singleton_Pattern
 http://www.kmonos.net/alang/d/migrate-to-shared.html
 http://msystem.m4.coreserver.jp/weblog/?p=1620
 https://davesdprogramming.wordpress.com/2013/05/06/low-lock-singletons/
@@ -447,6 +449,7 @@ class MySingleton {
   __gshared MySingleton instance_;
  }
 ***/
+
 
 version(Module_TEST) {
 
@@ -476,13 +479,13 @@ void test()
 	dlog("--------------------");
     dlogDump(cast(void *)&ss, ss.sizeof, "ss");
 	
-	string stringCode = "abc漢字def"c;
+	string stringCode = "abcdあいう 漢字efgh"c;
     dlogDump(cast(void*)stringCode, stringCode.length, "utf8 string");
     
-    wstring utf16Code = "abc漢字def"w;
+    wstring utf16Code = "abcdあいう 漢字efgh"w;
     dlogDump(cast(void*)utf16Code, utf16Code.length * wchar.sizeof, "utf16 string");
     
-    dstring utf32Code = "abc漢字def"d;
+    dstring utf32Code = "abcdあいう 漢字efgh"d;
     dlogDump(cast(void*)utf32Code, utf32Code.length * dchar.sizeof, "utf32 string");
 }
 
