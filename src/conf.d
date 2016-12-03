@@ -59,20 +59,9 @@ private:
 		setString(buildDMD,  __VENDOR__ ~ " " ~ to!string(__VERSION__));
 	}
 	
-	string getExecPath() {
-		import core.runtime: Runtime;
-		string path = Runtime.args[0];
-		if (path.length <= 0) {
-			version (Windows) {
-				// GetModulePath(getModuleHandle());
-			}
-			assert(false, "Runtime.args.length = " ~ to!string(Runtime.args.length));
-		}
-		return path;
-	}
 	
 	void setupPath() {
-		string appPath = getExecPath();
+		string appPath = thisExePath();
 		_productPath = dirName(appPath); // path/dir/file.ext -> path/dir
 		
 		version (Windows) {

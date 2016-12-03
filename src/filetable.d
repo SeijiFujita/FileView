@@ -39,6 +39,7 @@ public:
 	void delegate(string path = null) updateFolder;
 
 	this() {
+		show_directory = true;
 		tableItemBackgroundColor = wm.getColor(230, 230, 230);
 		tableItemClipboardCutColor = wm.getColor(40, 40, 240);
 	}

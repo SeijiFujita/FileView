@@ -8,6 +8,7 @@ rem path=C:\D\dmd.2.071.2\windows\bin;C:\D\bin;
 dmd --version
 rem dmd @dwtlib_normal.txt
 rem dmd @dwt64lib_normal.txt
+
 dmd @buildcf.txt
 
 @if ERRORLEVEL 1 goto :eof
