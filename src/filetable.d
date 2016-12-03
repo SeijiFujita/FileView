@@ -348,6 +348,8 @@ public:
 		
 		menu.addMenuListener(new class MenuAdapter {
 			override void menuShown(MenuEvent e) {
+				// ShowDirectorys
+				itemShowDirectory.setEnabled(show_directory);
 				
 				// cut & copy menu enable & disable
 				int count = fileTable.getSelectionCount();
@@ -586,16 +588,19 @@ public:
 	}
 	void execNewFile() {
 		string newFile = tablePath ~ PathDelimiter ~ "newfile.txt";
-		if (newFile.exists()) {
+		if (newFile.exists() && newFile.isFile()) {
 			RecycleBin(newFile);
 		}
 		std.file.write(newFile, "// hello\n");
 		reloadFileTable();
 	}
 	void execNewDirectory() {
+		show_directory = true;
 		string newFolder = tablePath ~ PathDelimiter ~ "newFolder";
-		MakeDir(newFolder);
-		updateFolder();
+		if (!(newFolder.exists() && newFolder.isDir())) {
+			MakeDir(newFolder);
+			updateFolder();
+		}
 	}
 	bool CreateProcess(string commandLine) {
 		auto hHeap = OS.GetProcessHeap();
