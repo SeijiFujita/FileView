@@ -111,7 +111,12 @@ class MainForm
 	}
 	void updateFolder(string path = null) {
 		if (path != null) {
-			pathEdit.setText(path);
+			if (path.length && path.exists() && path.isDir()) {
+				pathEdit.setText(path);
+			}
+			else {
+				pathEdit.setText(DirectoryPath);
+			}
 		}
 		setDirectoryPath(pathEdit.getText());
 		tfolder.reloadFolder(DirectoryPath);

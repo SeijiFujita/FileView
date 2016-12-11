@@ -65,12 +65,7 @@ class Bookmark
 					auto item = cast(bookmarkItem)bookmarkTree.getItem(point);
 					if (item !is null) {
 						dlog("MouseDown: ", item.getfullPath());
-						string path = item.getfullPath();
-						if (path.length && path.exists() && path.isDir()) {
-							// reloadFileTable(path);
-							// updateFolder(item.getfullPath());
-							updateFolder(path);
-						}
+						updateFolder(item.getfullPath());
 					}
 				}
 			}
