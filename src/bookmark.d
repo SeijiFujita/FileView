@@ -66,9 +66,10 @@ class Bookmark
 					if (item !is null) {
 						dlog("MouseDown: ", item.getfullPath());
 						string path = item.getfullPath();
-						if (path.length && path.isDir()) {
+						if (path.length && path.exists() && path.isDir()) {
 							// reloadFileTable(path);
-							updateFolder(item.getfullPath());
+							// updateFolder(item.getfullPath());
+							updateFolder(path);
 						}
 					}
 				}
