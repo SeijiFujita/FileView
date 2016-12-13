@@ -43,6 +43,7 @@ public:
 		tableItemBackgroundColor = wm.getColor(230, 230, 230);
 		tableItemClipboardCutColor = wm.getColor(40, 40, 240);
 	}
+	
 	void initUI(Composite parent, string path) {
 		fileTable = new Table(parent, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL | SWT.MULTI | SWT.FULL_SELECTION);
 		fileTable.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL));
@@ -349,7 +350,7 @@ public:
 		menu.addMenuListener(new class MenuAdapter {
 			override void menuShown(MenuEvent e) {
 				// ShowDirectorys
-				itemShowDirectory.setEnabled(show_directory);
+				itemShowDirectory.setSelection(show_directory);
 				
 				// cut & copy menu enable & disable
 				int count = fileTable.getSelectionCount();
@@ -446,13 +447,13 @@ public:
 		}
 	}
 	void execFileView() {
-		string prog = "C:\\D\\bin\\fileView64.exe";
-		string param = " " ~ tablePath;
+		immutable string prog = "fileView64.exe";
+		immutable string param = " " ~ tablePath;
 		CreateProcess(prog ~ param);
 	}
 	void execFileFind() {
-		string prog = "C:\\D\\bin\\fileFind.exe";
-		string param = " " ~ tablePath;
+		immutable string prog = "fileFind64.exe";
+		immutable string param = " " ~ tablePath;
 		CreateProcess(prog ~ param);
 	}
 	void execMsys() {
