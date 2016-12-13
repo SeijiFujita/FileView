@@ -1,8 +1,8 @@
 # dmd @cmdfile. show dmd -v
 -wi -m64 -ofbin\FileView64.exe
--IC:\D\rakugaki\dwtdev\dwt_local\base\src
--IC:\D\rakugaki\dwtdev\dwt_local\org.eclipse.swt.win32.win32.x86\src
--JC:\D\rakugaki\dwtdev\dwt_local\res
+-I..\dwt_local\base\src
+-I..\dwt_local\org.eclipse.swt.win32.win32.x86\src
+-J..\dwt_local\res
 resource\resource.res
 
 # dlang sorce files: 
@@ -23,8 +23,8 @@ src\utils.d
 -L/OPT:REF
 
 ##64bit coff
-C:\D\rakugaki\dwtdev\dwt_local\lib\dwt_base_normal64.lib
-C:\D\rakugaki\dwtdev\dwt_local\lib\dwt_w64x86_normal64.lib
+..\dwt_local\lib\dwt_base_normal64.lib
+..\dwt_local\lib\dwt_w64x86_normal64.lib
 
 # 32bit omf
 #-L/SUBSYSTEM:CONSOLE:4.0
