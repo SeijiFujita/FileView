@@ -107,6 +107,29 @@ StringT stringToStringT(string st) {
 	return StrToTCHARs(0, sb.toString(), true);
 }
 
+
+Image getFilesIcon(string filePath)
+{
+	dlog("getFileIcon");
+	dlog("filePath: ", filePath);
+	
+	bool isfile = filePath.isFile();
+	SHFILEINFOW shfi;
+	StringT pszPath = StrToTCHARs(0, filePath, true);
+	int flags = OS.SHGFI_ICON | OS.SHGFI_SMALLICON | OS.SHGFI_USEFILEATTRIBUTES;
+	OS.SHGetFileInfo(pszPath.ptr, isfile ? OS.FILE_ATTRIBUTE_NORMAL : FILE_ATTRIBUTE_DIRECTORY, &shfi, SHFILEINFO.sizeof, flags);
+	return Image.win32_new(null, SWT.ICON, shfi.hIcon);
+	/*
+	Image image;
+	if (shfi.hIcon !is null) {
+		image = Image.win32_new(null, SWT.ICON, shfi.hIcon);
+	}
+	return image;
+	*/
+}
+
+
+
 int SHFileOperationCopy(string[] fromFiles, string toPath) {
 	dlog("SHFileOperationCopy");
 	dlog("fromFiles:");
@@ -385,18 +408,19 @@ public:
 //-----------------------------------------------------------------------------
 // Images
 //-----------------------------------------------------------------------------
-	Image[] images;
+	Image[] pool_images;
+	
 	Image image(string filePath) {
 		Image img;
-		if (filePath !is null && filePath.exists()) {
+		if (filePath !is null && filePath.exists() && filePath.isFile()) {
 			img = new Image(display, filePath);
-			images ~= img;
+			pool_images ~= img;
 		}
 		return img;
 	}
 	void imageDispose() {
-		if (images.length) {
-			foreach (v ; images) {
+		if (pool_images.length) {
+			foreach (v ; pool_images) {
 				v.dispose();
 			}
 		}

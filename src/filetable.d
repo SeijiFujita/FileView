@@ -256,9 +256,13 @@ public:
 	void addTable(Table node, string filepath, string size, string date) {
 		fileTableItem item = new fileTableItem(node, SWT.NONE);
 		item.setfullPath(filepath);
+		
 		if (++tableItemcount % 2) {
 			item.setBackground(tableItemBackgroundColor);
 		}
+		
+		item.setImage(0, getFilesIcon(filepath));
+		
 		string[] fileSpec = [baseName(filepath), size, date];
 		item.setText(fileSpec);
 	}
@@ -296,22 +300,19 @@ public:
 	}
 	string fileDateString(string fn) {
 		import std.datetime;
+		
+		SysTime ctm = Clock.currTime();
+		SysTime ftm = timeLastModified(fn);
 		string fileDate;
-		SysTime ctm, ftm;
-		try {
-			ctm = Clock.currTime();
-			ftm = timeLastModified(fn);
-			with (ftm) {
-				// ls -l みたいにファイルのタイムスタンプが今年の場合は時間を表示する
-				if (ctm.year == year)
-					fileDate = format("%02d/%02d %02d:%02d:%02d", month, day, hour, minute, second);
-				else
-					fileDate = format("%02d/%02d  %04d", month, day, year); 
+		
+		with (ftm) {
+			// 'ls -l' のようにファイルのタイムスタンプが今年の場合は時間を表示する
+			// Like 'ls -l' command. If the time stamp of the file is this year, it displays time. 
+			if (ctm.year == year) {
+				fileDate = format("%02d/%02d %02d:%02d:%02d", month, day, hour, minute, second);
+			} else {
+				fileDate = format("%02d/%02d  %04d", month, day, year); 
 			}
-		}
-		catch(Exception e) {
-			dlog("Exception: ", e.toString());
-			fileDate = "n/a";
 		}
 		return fileDate;
 	}
