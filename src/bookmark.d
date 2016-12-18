@@ -81,6 +81,7 @@ class Bookmark
 				foreach (v ; bookmarks) {
 					auto item = new bookmarkItem(itemTop, SWT.NONE);
 					item.setPath(v);
+					// none item.setToolTipText(path);
 				}
 				itemTop.setExpanded(true);
 			}

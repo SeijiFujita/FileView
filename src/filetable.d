@@ -322,14 +322,17 @@ public:
 		parent.setMenu(menu);
 		
 		addPopupMenu(menu, "extentionOpen", &extentionOpen);
+		//--------------------
 		addMenuSeparator(menu);
 		addPopupMenu(menu, "Hidemaru", &execHidemaru);
+		addPopupMenu(menu, "Emacs", &execEmacs);
 		addPopupMenu(menu, "VSCode", &execVSCode);
 		addPopupMenu(menu, "FileView", &execFileView);
 		addPopupMenu(menu, "FindFile", &execFileFind);
 		addPopupMenu(menu, "Msys", &execMsys);
 		addPopupMenu(menu, "CMD", &execCmd);
 		//--------------------
+		addMenuSeparator(menu);
 		auto itemCut    = addPopupMenu(menu, "Cut", &execCut);
 		auto itemCopy   = addPopupMenu(menu, "Copy", &execCopy);
 		auto itemPasete = addPopupMenu(menu, "Pasete", &execPasete);
@@ -447,6 +450,20 @@ public:
 			reloadFileTable();
 		}
 	}
+	void execEmacs() {
+		// C:\emacs\emacs.bat
+		dlog("execEmacs");
+		fileTableItem[] items = cast(fileTableItem[]) fileTable.getSelection();
+		if (items.length) {
+			string prog = "C:\\emacs\\emacs.bat";
+			string param;
+			foreach(v ; items) {
+				param ~= " " ~ v.getfullPath();
+			}
+			CreateProcess(prog ~ param);
+			reloadFileTable();
+		}
+	}
 	void execFileView() {
 		immutable string prog = "fileView64.exe";
 		immutable string param = " " ~ tablePath;
@@ -458,16 +475,14 @@ public:
 		CreateProcess(prog ~ param);
 	}
 	void execMsys() {
-		// C:\emacs\emacs.bat
 		string prog = "C:\\MinGW32\\Mintty.bat";
-		string param = " " ~ tablePath;
-		CreateProcess(prog ~ param);
+		CreateProcess(prog);
 	}
 	void execCmd() {
-		// C:\emacs\emacs.bat
+		dlog("execCmd");
 		string prog = "CMD.EXE";
-		string param = " " ~ tablePath;
-		CreateProcess(prog ~ param);
+		chdir(tablePath);
+		CreateProcess(prog);
 	}
 	void execDelete() {
 		if (fileTable.getSelectionCount() != 0) {
