@@ -51,6 +51,7 @@ public:
 		setDragDrop(fileTable);
 		setPopup(fileTable);
 		reloadFileTable(path);
+		dlog("initUI:path ", path);
 		
 		fileTable.addListener(SWT.MouseDoubleClick, new class Listener {
 			void handleEvent(Event event) {
@@ -227,7 +228,7 @@ public:
 			tablePath = path;
 			try {
 				if (show_directory) {
-					// addTable(fileTable, "..", "<dir>", fileDateString(e.name ~ "\\.."));
+					addTable(fileTable, dirName(path), "<dir>", fileDateString(path), true);
 					foreach (DirEntry e; dirEntries(path, SpanMode.shallow)) {
 						if (e.isDir()) {
 							addTable(fileTable, e.name, "<dir>", fileDateString(e.name));
@@ -239,7 +240,8 @@ public:
 						}
 					}
 				}
-				else {
+				else {	// not show dirEntries
+					addTable(fileTable, dirName(path), "<dir>", fileDateString(path), true);
 					foreach (DirEntry e; dirEntries(path, SpanMode.shallow)) {
 						if (e.isFile()) {
 							addTable(fileTable, e.name, fileSizeString(e.size), fileDateString(e.name));
@@ -253,18 +255,19 @@ public:
 			}
 		}
 	}
-	void addTable(Table node, string filepath, string size, string date) {
+	void addTable(Table node, string filepath, string size, string date, bool parentPath = false) {
 		fileTableItem item = new fileTableItem(node, SWT.NONE);
-		item.setfullPath(filepath);
-		
 		if (++tableItemcount % 2) {
 			item.setBackground(tableItemBackgroundColor);
 		}
-		
+		item.setfullPath(filepath);
 		item.setImage(0, getFilesIcon(filepath));
 		
-		string[] fileSpec = [baseName(filepath), size, date];
-		item.setText(fileSpec);
+		if (parentPath) {
+			item.setText(["..", size, date]);
+		} else {
+			item.setText([baseName(filepath), size, date]);
+		}
 	}
 	
 	class fileTableItem : TableItem
@@ -421,6 +424,7 @@ public:
 				dlog("ext: ", ext);
 				auto p = Program.findProgram(ext);
 				dlog("command: ", p.command);
+				chdir(tablePath);
 				p.execute(file);
 			}
 		}
