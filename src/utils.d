@@ -333,7 +333,7 @@ extern (Windows) nothrow @nogc {
     	alias SHEmptyRecycleBinW SHEmptyRecycleBin;
 	} else {
     	alias SHEmptyRecycleBinA SHEmptyRecycleBin;
-}
+	}
 }
 
 bool EmptyRecycleBin() {

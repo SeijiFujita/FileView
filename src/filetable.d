@@ -445,7 +445,8 @@ public:
 	void execVSCode() {
 		fileTableItem[] items = cast(fileTableItem[]) fileTable.getSelection();
 		if (items.length) {
-			string prog = "\"C:\\Program Files (x86)\\Microsoft VS Code\\bin\\code.cmd\"";
+			// string prog = "\"C:\\Program Files (x86)\\Microsoft VS Code\\bin\\code.cmd\"";
+			string prog = "\"C:\\Program Files (x86)\\Microsoft VS Code\\Code.exe\"";
 			string param;
 			foreach(v ; items) {
 				param ~= " " ~ v.getfullPath();
