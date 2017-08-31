@@ -1,6 +1,6 @@
 // Written in the D programming language.
 /*
- * dmd 2.070.0 - 2.071.0
+ * dmd 2.070.0 - 2.075.0
  *
  * Copyright Seiji Fujita 2016.
  * Distributed under the Boost Software License, Version 1.0.
@@ -10,8 +10,9 @@
 module setting;
 
 import org.eclipse.swt.all;
-import java.lang.all;
+// import java.lang.all;
 
+import windowmgr;
 import conf;
 import dlsbuffer;
 
@@ -53,6 +54,8 @@ public:
 		int y = (displayRect.height - shellRect.height) / 2;
 		shell.setLocation(x, y);
 	}
+
+	/**
 	Composite createComposit(int col, int gdata) {
 		// container Composite
 		Composite container = new Composite(shell, SWT.NONE);
@@ -67,6 +70,8 @@ public:
 		container.setLayoutData(new GridData(gdata));
 		return container;
 	}
+	**/
+
 	void createContents() {
 		shell = new Shell(getParent(), getStyle() | SWT.DIALOG_TRIM | SWT.RESIZE);
 		shell.setSize(400, 500);
@@ -74,7 +79,7 @@ public:
 		shell.setLayout(new GridLayout(1, false));
 		
 		//
-		Composite container = createComposit(1, GridData.FILL_BOTH);
+		Composite container = wm.createComposit(shell, 1, GridData.FILL_BOTH);
 		tabFolder = new CTabFolder(container, SWT.BORDER);
 		tabFolder.setLayoutData(new GridData(GridData.FILL_BOTH));
 		
@@ -90,9 +95,9 @@ public:
 		CTabItem tabItem = new CTabItem(tabFolder, SWT.NONE);
 		tabItem.setText("General");
 		//
-		Composite container = createComposit(tabFolder, 1, GridData.FILL_BOTH);
+		Composite container = wm.createComposit(tabFolder, 1, GridData.FILL_BOTH);
 		//
-		createLabel(container, "General:");
+		wm.createLabel(container, "General:");
 		//
 		tabItem.setControl(container);
 	}
@@ -100,9 +105,9 @@ public:
 		CTabItem tabItem = new CTabItem(tabFolder, SWT.NONE);
 		tabItem.setText("Treeview");
 		//
-		Composite container = createComposit(tabFolder, 1, GridData.FILL_BOTH);
+		Composite container = wm.createComposit(tabFolder, 1, GridData.FILL_BOTH);
 		//
-		createLabel(container, "Treeview:");
+		wm.createLabel(container, "Treeview:");
 		//
 		tabItem.setControl(container);
 	}
@@ -110,13 +115,13 @@ public:
 		CTabItem tabItem = new CTabItem(tabFolder, SWT.NONE);
 		tabItem.setText("FileTable");
 		//
-		Composite container = createComposit(tabFolder, 1, GridData.FILL_BOTH);
+		Composite container = wm.createComposit(tabFolder, 1, GridData.FILL_BOTH);
 		//
-		createLabel(container, "FileTable:");
+		wm.createLabel(container, "FileTable:");
 		//
 		tabItem.setControl(container);
 	}
-
+/***
 	Composite createComposit(Composite parent, int col, int gdata) {
 		// container Composite
 		Composite container = new Composite(parent, SWT.NONE);
@@ -130,14 +135,14 @@ public:
 		container.setLayoutData(new GridData(gdata));
 		return container;
 	}
-
+***/
 	void setAboutTab(CTabFolder tabFolder) {
 		CTabItem tabItem = new CTabItem(tabFolder, SWT.NONE);
 		tabItem.setText("About");
 		//
-		Composite container = createComposit(tabFolder, 1, GridData.FILL_BOTH);
+		Composite container = wm.createComposit(tabFolder, 1, GridData.FILL_BOTH);
 		//
-		createLabel(container, "
+		wm.createLabel(container, "
 
  FileView for Windows
  version 0.1a
@@ -163,16 +168,15 @@ public:
 		CTabItem tabItem = new CTabItem(tabFolder, SWT.NONE);
 		tabItem.setText("Bookmark");
 		//
-		Composite container = createComposit(tabFolder, 1, GridData.FILL_BOTH);
+		Composite container = wm.createComposit(tabFolder, 1, GridData.FILL_BOTH);
 		//
-		createLabel(container, "BookmarkEditor:");
+		wm.createLabel(container, "BookmarkEditor:");
 		//
-		createText(container);
+		bookmarkText = wm.createText(container);
 		loadBookmarkData();
 		//
 		tabItem.setControl(container);
 	}
-	
 	
 	void loadBookmarkData() {
 		string[] bd;
@@ -205,10 +209,12 @@ public:
 			}
 		}
 	}
-	void createText(Composite parent) {
-		bookmarkText = new Text(parent, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
+/*
+	Text createText(Composite parent) {
+		Text tt = new Text(parent, SWT.MULTI | SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
 		GridData layoutData = new GridData(GridData.FILL_BOTH);
-		bookmarkText.setLayoutData(layoutData);
+		tt.setLayoutData(layoutData);
+		// set ScrollBar
 		Listener scrollBarListener = new class Listener {
 			override void handleEvent(Event event) {
 				Text t = cast(Text)event.widget;
@@ -223,9 +229,10 @@ public:
 				}
 			}
 		};
-		bookmarkText.addListener(SWT.Resize, scrollBarListener);
-		bookmarkText.addListener(SWT.Modify, scrollBarListener);
-		setDragDrop(bookmarkText);
+		tt.addListener(SWT.Resize, scrollBarListener);
+		tt.addListener(SWT.Modify, scrollBarListener);
+		setDragDrop(tt);
+		return tt;
 	}
 	void setDragDrop(Text tt) {
 		int operations = DND.DROP_MOVE | DND.DROP_COPY | DND.DROP_LINK;
@@ -282,13 +289,15 @@ public:
 			}
 		});
 	}
+ */
 
 //-----------------------------------------
 	void createBottmWidget() {
-		createHorizotalLine(shell);
+		wm.createHorizotalLine(shell);
 		// ok, cancel bottom
-		Composite bottom = createRightAlignmentComposite();
-		Button okBtn = createButton(bottom, SWT.PUSH, "OK");
+		Composite bottom = wm.createRightAlignmentComposite(shell);
+		Button okBtn = wm.createButton(bottom, "OK", SWT.PUSH);
+
 		void onSelection_okBtn(SelectionEvent e) {
 			dialogResult = true;
 			
@@ -300,7 +309,7 @@ public:
 			dgSelectionListener(SelectionListener.SELECTION, &onSelection_okBtn)
 		);
 		
-		Button cancelBtn = createButton(bottom, SWT.PUSH, "キャンセル");
+		Button cancelBtn = wm.createButton(bottom, "キャンセル", SWT.PUSH);
 		void onSelection_canselBtn(SelectionEvent e) {
 			dialogResult = false;
 			shell.close();
@@ -310,6 +319,7 @@ public:
 		);
 	}
 	
+/**
 	Label createHorizotalLine(Composite c) {
 		Label line = new Label(c, SWT.SEPARATOR | SWT.HORIZONTAL);
 		GridData data = new GridData(GridData.HORIZONTAL_ALIGN_FILL);
@@ -356,5 +366,6 @@ public:
 		l.setText(text);
 		return l;
 	}
+**/
 }
 

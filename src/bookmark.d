@@ -1,6 +1,6 @@
 // Written in the D programming language.
 /*
- * dmd 2.070.0 - 2.071.0
+ * dmd 2.070.0 - 2.075.0
  *
  * Copyright Seiji Fujita 2016.
  * Distributed under the Boost Software License, Version 1.0.
@@ -15,6 +15,7 @@ import java.lang.all;
 import std.file;
 import std.path;
 
+import windowmgr;
 import conf;
 import utils;
 import setting;

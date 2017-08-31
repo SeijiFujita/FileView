@@ -1,6 +1,6 @@
 // Written in the D programming language.
 /*
- * dmd 2.070.0 - 2.071.0
+ * dmd 2.070.0 - 2.075.0
  *
  * Copyright Seiji Fujita 2016.
  * Distributed under the Boost Software License, Version 1.0.
@@ -351,6 +351,7 @@ bool EmptyRecycleBin() {
 
 // @@--------------------------------------------------------------------------
 
+version(none) {
 WindowManager wm;
 
 class WindowManager
@@ -640,5 +641,5 @@ private static Font loadMonospacedFont(Display display) {
 		return ddlg.open();
 	}
 }
-
+}
 

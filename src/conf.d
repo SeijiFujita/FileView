@@ -1,6 +1,6 @@
 // Written in the D programming language.
 /*
- * dmd 2.070.0 - 2.071.0
+ * dmd 2.070.0 - 2.075.0
  *
  * Copyright Seiji Fujita 2016.
  * Distributed under the Boost Software License, Version 1.0.
@@ -28,17 +28,19 @@ enum CONFIG_EXT = ".conf";
 enum BACKUP_EXT = ".bakup";
 enum TEMP_EXT   = ".temp";
 
-Config cf;
+static Config cf;
+
+
 
 class Config
 {
-	static immutable string productName     = "productName";
-	static immutable string productVersion  = "productVersion";
-	static immutable string buildDATE       = "buildDATE";
-	static immutable string buildDMD        = "buildDMD";
-	//
-	static immutable string LastPath        = "LastPath";
-	static immutable string BookmarkData	 = "BookmarkData";
+	immutable string productName     = "productName";
+	immutable string productVersion  = "productVersion";
+	immutable string buildDATE       = "buildDATE";
+	immutable string buildDMD        = "buildDMD";
+	///
+	immutable string LastPath        = "LastPath";
+	immutable string BookmarkData	 = "BookmarkData";
 	
 private:
 	string[string]		stringValue;  // STRING
@@ -131,6 +133,8 @@ public:
 		if (key in stringValue) {
 			value  = stringValue[key];
 			result = true;
+		} else {
+			value = null;
 		}
 		return result;
 	}

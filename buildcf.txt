@@ -1,8 +1,12 @@
 # dmd @cmdfile. show dmd -v
--wi -m64 -ofbin\FileView64.exe
--I..\dwt_local\base\src
--I..\dwt_local\org.eclipse.swt.win32.win32.x86\src
--J..\dwt_local\res
+#-wi
+-m64 -O -release -inline
+-ofbin\FileView64.exe
+-I..\dwtlib\base\src
+-I..\dwtlib\org.eclipse.swt.win32.win32.x86\src
+-J..\dwtlib\org.eclipse.swt.win32.win32.x86\res
+
+# windows resouce
 resource\resource.res
 
 # dlang sorce files: 
@@ -14,6 +18,7 @@ src\foldertree.d
 src\main.d
 src\setting.d
 src\utils.d
+src\windowmgr.d
 
 # MS Link
 #-L/SUBSYSTEM:CONSOLE
@@ -23,15 +28,16 @@ src\utils.d
 -L/OPT:REF
 
 ##64bit coff
-..\dwt_local\lib\dwt_base_normal64.lib
-..\dwt_local\lib\dwt_w64x86_normal64.lib
+#..\dwtlib\lib\dwt_w64x86.lib
+#..\dwtlib\lib\dwt_w64x86_optimize.lib
+..\dwtlib\lib\dwt_w64x86_debug.lib
 
 # 32bit omf
 #-L/SUBSYSTEM:CONSOLE:4.0
 #-L/exet:nt/su:windows:4.0
 #-L/SUBSYSTEM:CONSOLE:4.0
 #-L/SUBSYSTEM:WINDOWS:4.0
-#-LC:\D\rakugaki\dwtdev\dwt_local\lib\
+#-L..\dwtlib\org.eclipse.swt.win32.win32.x86\lib
 #advapi32.lib
 #comctl32.lib
 #comdlg32.lib
@@ -49,6 +55,7 @@ src\utils.d
 #shlwapi.lib
 #--
 ## original
+#-L..\dwtlib\lib
 #dwt-base.lib
 #org.eclipse.swt.win32.win32.x86.lib
 #-- dmd

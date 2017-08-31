@@ -1,6 +1,6 @@
 // Written in the D programming language.
 /*
- * dmd 2.070.0 - 2.071.0
+ * dmd 2.070.0 - 2.075.0
  *
  * Copyright Seiji Fujita 2016.
  * Distributed under the Boost Software License, Version 1.0.
@@ -87,7 +87,7 @@ class FolderTree
 			override void treeExpanded(TreeEvent event) {
 				dlog("treeExpanded");
 				TreeItem item = cast(TreeItem) event.item;
-//				folderTree.setSelection(item);
+				// folderTree.setSelection(item);
 				foreach(v ; item.getItems()) {
 					v.dispose();
 				}
